@@ -6,7 +6,8 @@ use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
 use db::Database;
 use eolmon::{
-    providers::endoflife_date::{self, Eol},
+    program::{Program, Version},
+    providers::endoflife_date::{self, Eol, ReleaseCycle},
     sources::binary,
 };
 use log::info;
@@ -27,7 +28,11 @@ enum Commands {
     List {},
 
     /// Get information for a program
-    Info { name: String },
+    Info {
+        name: String,
+    },
+
+    InfoAll {},
 
     /// Update internal database of supported programs
     Update {},
@@ -35,7 +40,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    simple_logger::init().unwrap();
+    simple_logger::init_with_level(log::Level::Warn).unwrap();
 
     let args = Args::parse();
 
@@ -60,44 +65,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 exit(-1);
             }
 
-            let p = p.unwrap();
-
-            // let docker_connection = docker::connect()?;
-
-            // let info = docker_connection.info(p).await.unwrap();
-
-            let info = binary::info(&p.binary.unwrap())?;
-            for v in info {
-                println!("{v:?}");
-
-                if let Ok(cycle_info) = endoflife_date::get_release_cycle(
-                    &name,
-                    eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
-                )
-                .await
-                {
-                    if let Eol::Date(eol_date) = cycle_info.eol {
-                        let today = Utc::now().date_naive();
-
-                        let remaining_time = eol_date - today;
-
-                        if remaining_time > TimeDelta::days(0) {
-                            println!(
-                                "Version {} will be supported for {} days ({})",
-                                v.cycle,
-                                remaining_time.num_days(),
-                                eol_date
-                            );
-                        } else {
-                            println!(
-                                "Version {} is not supported since {} days ({})",
-                                v.cycle,
-                                remaining_time.num_days(),
-                                eol_date
-                            );
-                        }
-                    }
-                }
+            let _ = print_info(p.unwrap()).await;
+        }
+        Commands::InfoAll {} => {
+            for program in db.supported_programs {
+                let _ = print_info(program).await;
             }
         }
         Commands::Update {} => {
@@ -106,4 +78,51 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+async fn print_info(p: Program) -> Result<(), Box<dyn Error>> {
+    if let Some(binary_extractors) = p.binary {
+        for extractor in binary_extractors {
+            for v in binary::info(&extractor)? {
+                println!("{} found in Version {}", p.title, v.string);
+
+                if let Some(ref endoflife_date_id) = p.endoflife_date_id {
+                    if let Ok(cycle_info) = endoflife_date::get_release_cycle(
+                        endoflife_date_id,
+                        eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
+                    )
+                    .await
+                    {
+                        print_end_of_life_info(&v, &cycle_info);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
+    if let Eol::Date(eol_date) = cycle_info.eol {
+        let today = Utc::now().date_naive();
+
+        let remaining_time = eol_date - today;
+
+        if remaining_time > TimeDelta::days(0) {
+            println!(
+                "Version {} will be supported for {} days ({})",
+                v.cycle,
+                remaining_time.num_days(),
+                eol_date
+            );
+        } else {
+            println!(
+                "Version {} is not supported since {} days ({})",
+                v.cycle,
+                remaining_time.num_days(),
+                eol_date
+            );
+        }
+    }
 }

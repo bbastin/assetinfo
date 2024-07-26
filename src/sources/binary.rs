@@ -15,6 +15,10 @@ use crate::program::{BinaryExtractor, Version};
 use super::regex::parse_version;
 
 pub fn info(extractor: &BinaryExtractor) -> Result<Vec<Version>, Box<dyn Error>> {
+    if !extractor.path.exists() {
+        return Ok(Vec::default());
+    }
+
     let r = if extractor.user.is_some() {
         run_as_other_user_sudo(extractor)
     } else {
@@ -51,7 +55,7 @@ pub fn info(extractor: &BinaryExtractor) -> Result<Vec<Version>, Box<dyn Error>>
 }
 
 pub fn run_as_user(extractor: &BinaryExtractor) -> std::io::Result<Output> {
-    Command::new(extractor.binary_path.clone())
+    Command::new(extractor.path.clone())
         .args(extractor.arguments.clone())
         .output()
 }
@@ -66,7 +70,7 @@ pub fn run_as_other_user_systemd(extractor: &BinaryExtractor) -> std::io::Result
         //"--service-type=exec".to_string(),
         "--quiet".to_string(),
         format!("--uid={user}",),
-        extractor.binary_path.to_str().unwrap().to_string(),
+        extractor.path.to_str().unwrap().to_string(),
     ];
 
     for a in extractor.arguments.clone() {
@@ -84,7 +88,7 @@ pub fn run_as_other_user_sudo(extractor: &BinaryExtractor) -> std::io::Result<Ou
     let mut args: Vec<String> = vec![
         "-u".to_string(),
         user,
-        extractor.binary_path.to_str().unwrap().to_string(),
+        extractor.path.to_str().unwrap().to_string(),
     ];
 
     for a in extractor.arguments.clone() {

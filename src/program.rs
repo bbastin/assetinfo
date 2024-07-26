@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct BinaryExtractor {
-    pub binary_path: PathBuf,
+    pub path: PathBuf,
     pub user: Option<String>,
     pub arguments: Vec<String>,
     pub regex: String,
@@ -25,8 +25,9 @@ pub struct DockerExtractor {
 pub struct Program {
     pub id: String,
     pub title: String,
-    pub binary: Option<BinaryExtractor>,
+    pub binary: Option<Vec<BinaryExtractor>>,
     pub docker: Option<DockerExtractor>,
+    pub endoflife_date_id: Option<String>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
