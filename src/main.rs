@@ -120,7 +120,7 @@ fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
             println!(
                 "Version {} is not supported since {} days ({})",
                 v.cycle,
-                remaining_time.num_days(),
+                remaining_time.num_days().abs(),
                 eol_date
             );
         }
