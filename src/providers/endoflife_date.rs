@@ -50,24 +50,27 @@ pub struct ReleaseCycle {
 
 const BASE_URL: &str = "https://endoflife.date/api";
 
-pub fn get_release_cycles(product: &str) -> Result<Vec<ReleaseCycle>, Box<dyn Error>> {
-    let r = reqwest::blocking::get(format!("{BASE_URL}/{product}.json"))?;
-    Ok(r.json::<Vec<ReleaseCycle>>()?)
+pub async fn get_release_cycles(product: &str) -> Result<Vec<ReleaseCycle>, Box<dyn Error>> {
+    let r = reqwest::get(format!("{BASE_URL}/{product}.json")).await?;
+    Ok(r.json::<Vec<ReleaseCycle>>().await?)
 }
 
-pub fn get_release_cycle(product: &str, cycle: CycleId) -> Result<ReleaseCycle, Box<dyn Error>> {
+pub async fn get_release_cycle(
+    product: &str,
+    cycle: CycleId,
+) -> Result<ReleaseCycle, Box<dyn Error>> {
     let cycle_text = match cycle {
         CycleId::String(s) => s,
         CycleId::Number(n) => n.to_string(),
     };
 
-    let r = reqwest::blocking::get(format!("{BASE_URL}/{product}/{cycle_text}.json"))?;
-    Ok(r.json::<ReleaseCycle>()?)
+    let r = reqwest::get(format!("{BASE_URL}/{product}/{cycle_text}.json")).await?;
+    Ok(r.json::<ReleaseCycle>().await?)
 }
 
-pub fn get_all_products() -> Result<Vec<String>, Box<dyn Error>> {
-    let r = reqwest::blocking::get(format!("{BASE_URL}/all.json"))?;
-    Ok(r.json::<Vec<String>>()?)
+pub async fn get_all_products() -> Result<Vec<String>, Box<dyn Error>> {
+    let r = reqwest::get(format!("{BASE_URL}/all.json")).await?;
+    Ok(r.json::<Vec<String>>().await?)
 }
 
 #[cfg(test)]
@@ -112,19 +115,22 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn api_get_release_cycles_from_linux() {
-        let rcs = get_release_cycles("linux").expect("Did not receive valid response");
+    async fn api_get_release_cycles_from_linux() {
+        let rcs = get_release_cycles("linux")
+            .await
+            .expect("Did not receive valid response");
         assert!(rcs.len() > 0);
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn api_get_one_release_cycle_from_linux() {
+    async fn api_get_one_release_cycle_from_linux() {
         let cycle = CycleId::String("6.10".to_string());
-        let rcs =
-            get_release_cycle("linux", cycle.clone()).expect("Did not receive valid response");
+        let rcs = get_release_cycle("linux", cycle.clone())
+            .await
+            .expect("Did not receive valid response");
 
         assert_eq!(
             rcs.release_date,
@@ -132,10 +138,12 @@ mod tests {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[ignore]
-    fn api_get_supported_product_list() {
-        let products = get_all_products().expect("Did not receive valid response");
+    async fn api_get_supported_product_list() {
+        let products = get_all_products()
+            .await
+            .expect("Did not receive valid response");
 
         assert!(products.len() > 0);
     }

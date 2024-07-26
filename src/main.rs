@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
 use db::Database;
-use eolmon::sources::binary;
+use eolmon::{
+    providers::endoflife_date::{self, Eol},
+    sources::binary,
+};
 use log::info;
 use std::{env, error::Error, process::exit};
 
@@ -65,6 +69,35 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let info = binary::info(&p.binary.unwrap())?;
             for v in info {
                 println!("{v:?}");
+
+                if let Ok(cycle_info) = endoflife_date::get_release_cycle(
+                    &name,
+                    eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
+                )
+                .await
+                {
+                    if let Eol::Date(eol_date) = cycle_info.eol {
+                        let today = Utc::now().date_naive();
+
+                        let remaining_time = eol_date - today;
+
+                        if remaining_time > TimeDelta::days(0) {
+                            println!(
+                                "Version {} will be supported for {} days ({})",
+                                v.cycle,
+                                remaining_time.num_days(),
+                                eol_date
+                            );
+                        } else {
+                            println!(
+                                "Version {} is not supported since {} days ({})",
+                                v.cycle,
+                                remaining_time.num_days(),
+                                eol_date
+                            );
+                        }
+                    }
+                }
             }
         }
         Commands::Update {} => {
