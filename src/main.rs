@@ -62,9 +62,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             // let info = docker_connection.info(p).await.unwrap();
 
-            let info = binary::info(p.binary.unwrap())?;
+            let info = binary::info(&p.binary.unwrap())?;
             for v in info {
-                println!("{:?}", v);
+                println!("{v:?}");
             }
         }
         Commands::Update {} => {

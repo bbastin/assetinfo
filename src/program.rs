@@ -8,6 +8,7 @@ use std::path::PathBuf;
 #[derive(Deserialize, Serialize, Clone)]
 pub struct BinaryExtractor {
     pub binary_path: PathBuf,
+    pub user: Option<String>,
     pub arguments: Vec<String>,
     pub regex: String,
 }
@@ -31,6 +32,7 @@ pub struct Program {
 #[derive(PartialEq, Eq, Debug)]
 pub struct Version {
     pub string: String,
+    pub cycle: String,
     pub major: usize,
     pub minor: Option<usize>,
     pub patch: Option<usize>,

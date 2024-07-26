@@ -13,7 +13,7 @@ pub struct Database {
 
 impl Database {
     pub fn load(path: PathBuf) -> Result<Database, Box<dyn Error>> {
-        let mut supported_programs: Vec<Program> = Default::default();
+        let mut supported_programs: Vec<Program> = Vec::default();
 
         for entry in path
             .read_dir()
