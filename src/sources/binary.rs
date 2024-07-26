@@ -5,6 +5,7 @@
 use core::str;
 use std::{
     error::Error,
+    io::Error as IoError,
     process::{Command, Output},
 };
 
@@ -36,6 +37,13 @@ pub fn info(extractor: &BinaryExtractor) -> Result<Vec<Version>, Box<dyn Error>>
             };
 
             let s = str::from_utf8(fd);
+
+            if !output.status.success() {
+                return Err(Box::new(IoError::new(
+                    std::io::ErrorKind::Other,
+                    s.unwrap(),
+                )));
+            }
 
             let r = parse_version(s.unwrap(), &extractor.regex);
 
