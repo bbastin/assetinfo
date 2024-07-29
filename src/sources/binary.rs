@@ -107,3 +107,50 @@ pub fn run_as_other_user_sudo(extractor: &BinaryExtractor) -> std::io::Result<Ou
 
     Command::new("/usr/bin/sudo").args(args).output()
 }
+
+#[cfg(test)]
+mod tests {
+
+    use std::fs::{self, File};
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    use super::*;
+
+    #[test]
+    fn test() {
+        let tmp_dir = TempDir::new().expect("Could not create tmpdir");
+        let file_path = tmp_dir.path().join("testprogram");
+        let mut tmp_file = File::create(file_path.clone()).expect("Could not create tmpfile");
+        writeln!(tmp_file, "#!/bin/sh\necho 1.2.3").expect("Could not write to tmpfile");
+        tmp_file.flush().expect("Could not flush tmpfile");
+        drop(tmp_file);
+        Command::new("/bin/chmod")
+            .arg("+x")
+            .arg(file_path.clone())
+            .output()
+            .expect("Could not set permission on tmpfile");
+
+        let extractor = BinaryExtractor {
+            path: file_path.clone(),
+            user: None,
+            arguments: Vec::default(),
+            regex: "^(?<version>(?<cycle>(?<major>\\d+))\\.(?<minor>\\d+)\\.(?<patch>\\d+))"
+                .to_string(),
+        };
+
+        let res = info(&extractor);
+        if let Err(e) = res {
+            panic!("{e}");
+        }
+        assert!(res.is_ok());
+
+        let version = res.unwrap();
+        assert_eq!(version.len(), 1);
+
+        let version = &version[0];
+        assert_eq!(version.string, "1.2.3");
+
+        fs::remove_file(file_path).expect("Could not delete tmpfile");
+    }
+}

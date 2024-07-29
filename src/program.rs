@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct BinaryExtractor {
     pub path: PathBuf,
     pub user: Option<String>,
@@ -13,7 +13,7 @@ pub struct BinaryExtractor {
     pub regex: String,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct DockerExtractor {
     pub image_name: String,
     pub binary_path: PathBuf,
@@ -21,7 +21,7 @@ pub struct DockerExtractor {
     pub regex: String,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct Program {
     pub id: String,
     pub title: String,

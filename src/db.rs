@@ -57,3 +57,43 @@ impl Database {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use std::fs::{self, File};
+    use std::io::Write;
+    use tempfile::TempDir;
+
+    use super::*;
+
+    #[test]
+    fn test() {
+        let tmp_dir = TempDir::new().expect("Could not create tmpdir");
+        let file_path = tmp_dir.path().join("testprogram.json");
+        let mut tmp_file = File::create(file_path.clone()).expect("Could not create tmpfile");
+
+        let testprogram = Program {
+            id: "testprogram".to_string(),
+            title: "Testprogram".to_string(),
+            binary: None,
+            docker: None,
+            endoflife_date_id: None,
+        };
+
+        writeln!(tmp_file, "{}", serde_json::to_string(&testprogram).unwrap())
+            .expect("Could not write to tmpfile");
+        tmp_file.flush().expect("Could not flush tmpfile");
+        drop(tmp_file);
+
+        let db = Database::load(tmp_dir.path().to_path_buf());
+
+        assert!(db.is_ok());
+
+        let db = db.unwrap();
+        assert_eq!(db.supported_programs.len(), 1);
+        assert_eq!(db.get(&testprogram.id), Some(testprogram));
+
+        fs::remove_file(file_path).expect("Could not delete tmpfile");
+    }
+}
