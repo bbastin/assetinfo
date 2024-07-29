@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use bollard::{container::ListContainersOptions, Docker};
-use log::warn;
+use bollard::{container::ListContainersOptions, secret::ContainerSummary, Docker};
 use std::error::Error;
 
-use crate::program::{Program, Version};
-
-use super::regex::parse_version;
+use crate::{
+    program::{self, DockerExtractor, Extractor, Version},
+    sources::regex,
+};
 
 pub struct Connection {
     connection: Docker,
@@ -19,12 +19,11 @@ impl Connection {
         Connection { connection }
     }
 
-    pub async fn info(&self, program: Program) -> Result<Vec<Version>, Box<dyn Error>> {
-        let extractor = program.docker.unwrap();
+    pub fn connect() -> Result<Connection, Box<dyn Error>> {
+        Ok(Connection::new(Docker::connect_with_socket_defaults()?))
+    }
 
-        // let mut filters = HashMap::new();
-        // filters.insert("ancestor".to_string(), vec![extractor.image_name]);
-
+    pub async fn info(&self, extractor: &DockerExtractor) -> Result<Vec<Version>, Box<dyn Error>> {
         let result = &self
             .connection
             .list_containers(Some(ListContainersOptions::<String> {
@@ -56,15 +55,8 @@ impl Connection {
                 continue;
             }
 
-            if let Some(labels) = res.labels.clone() {
-                const VERSION_LABEL: &str = "org.opencontainers.image.version";
-
-                if let Some(version_string) = labels.get(VERSION_LABEL) {
-                    match parse_version(version_string, &extractor.regex) {
-                        Ok(v) => versions.push(v),
-                        Err(e) => warn!("{e}"),
-                    }
-                }
+            if let Ok(Some(v)) = Self::match_oci_version_label(res, &extractor.regex) {
+                versions.push(v);
             }
         }
 
@@ -73,8 +65,34 @@ impl Connection {
 
         Ok(versions)
     }
+
+    fn match_oci_version_label(
+        container_summary: &ContainerSummary,
+        regex: &str,
+    ) -> Result<Option<program::Version>, Box<dyn Error>> {
+        if let Some(labels) = container_summary.labels.clone() {
+            const VERSION_LABEL: &str = "org.opencontainers.image.version";
+
+            let label = labels.get(VERSION_LABEL);
+
+            if let Some(str) = label {
+                let version = regex::parse_version(str, regex)?;
+
+                return Ok(Some(version));
+            }
+        }
+        Ok(None)
+    }
 }
 
-pub fn connect() -> Result<Connection, Box<dyn Error>> {
-    Ok(Connection::new(Docker::connect_with_socket_defaults()?))
+impl Extractor for DockerExtractor {
+    async fn version(&self) -> Result<Vec<Version>, Box<dyn Error>> {
+        let connection = Connection::connect()?;
+
+        connection.info(self).await
+    }
+
+    fn extractor_name() -> &'static str {
+        "Docker"
+    }
 }

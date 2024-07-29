@@ -6,9 +6,8 @@ use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
 use db::Database;
 use eolmon::{
-    program::{Program, Version},
+    program::{Extractor, Program, ProgramInfo, Version},
     providers::endoflife_date::{self, Eol, ReleaseCycle},
-    sources::binary,
 };
 use log::info;
 use std::{env, error::Error, process::exit};
@@ -54,7 +53,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Commands::List {} => {
             println!("Supported programs:");
             for program in db.supported_programs {
-                println!("{} ({}): ", program.title, program.id);
+                println!("{} ({}): ", program.info.title, program.info.id);
             }
         }
         Commands::Info { name } => {
@@ -65,11 +64,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 exit(-1);
             }
 
-            let _ = print_info(p.unwrap()).await;
+            let _ = gather_program_info(p.unwrap()).await;
         }
         Commands::InfoAll {} => {
             for program in db.supported_programs {
-                let _ = print_info(program).await;
+                let _ = gather_program_info(program).await;
             }
         }
         Commands::Update {} => {
@@ -80,26 +79,40 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn print_info(p: Program) -> Result<(), Box<dyn Error>> {
+async fn gather_program_info(p: Program) -> Result<(), Box<dyn Error>> {
     if let Some(binary_extractors) = p.binary {
         for extractor in binary_extractors {
-            for v in binary::info(&extractor)? {
-                println!("{} found in Version {}", p.title, v.string);
-
-                if let Some(ref endoflife_date_id) = p.endoflife_date_id {
-                    if let Ok(cycle_info) = endoflife_date::get_release_cycle(
-                        endoflife_date_id,
-                        eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
-                    )
-                    .await
-                    {
-                        print_end_of_life_info(&v, &cycle_info);
-                    }
-                }
-            }
+            print_info(extractor, &p.info).await?
         }
     }
 
+    if let Some(extractor) = p.docker {
+        print_info(extractor, &p.info).await?
+    }
+
+    Ok(())
+}
+
+async fn print_info<T: Extractor>(e: T, p: &ProgramInfo) -> Result<(), Box<dyn Error>> {
+    for v in e.version().await? {
+        println!(
+            "{} ({}) found in Version {}",
+            p.title,
+            T::extractor_name(),
+            v.string
+        );
+
+        if let Some(ref endoflife_date_id) = p.endoflife_date_id {
+            if let Ok(cycle_info) = endoflife_date::get_release_cycle(
+                endoflife_date_id,
+                eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
+            )
+            .await
+            {
+                print_end_of_life_info(&v, &cycle_info);
+            }
+        }
+    }
     Ok(())
 }
 

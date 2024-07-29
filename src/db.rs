@@ -47,7 +47,7 @@ impl Database {
 
     pub fn get(&self, name: &str) -> Option<Program> {
         for p in &self.supported_programs {
-            if p.id != name && p.title.to_lowercase() != name.to_lowercase() {
+            if p.info.id != name && p.info.title.to_lowercase() != name.to_lowercase() {
                 continue;
             }
 
@@ -61,6 +61,7 @@ impl Database {
 #[cfg(test)]
 mod tests {
 
+    use eolmon::program::ProgramInfo;
     use std::fs::{self, File};
     use std::io::Write;
     use tempfile::TempDir;
@@ -74,11 +75,13 @@ mod tests {
         let mut tmp_file = File::create(file_path.clone()).expect("Could not create tmpfile");
 
         let testprogram = Program {
-            id: "testprogram".to_string(),
-            title: "Testprogram".to_string(),
+            info: ProgramInfo {
+                id: "testprogram".to_string(),
+                title: "Testprogram".to_string(),
+                endoflife_date_id: None,
+            },
             binary: None,
             docker: None,
-            endoflife_date_id: None,
         };
 
         writeln!(tmp_file, "{}", serde_json::to_string(&testprogram).unwrap())
@@ -92,7 +95,7 @@ mod tests {
 
         let db = db.unwrap();
         assert_eq!(db.supported_programs.len(), 1);
-        assert_eq!(db.get(&testprogram.id), Some(testprogram));
+        assert_eq!(db.get(&testprogram.info.id), Some(testprogram));
 
         fs::remove_file(file_path).expect("Could not delete tmpfile");
     }

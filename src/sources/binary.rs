@@ -11,101 +11,110 @@ use std::{
 
 use log::{error, info};
 
-use crate::program::{BinaryExtractor, Version};
+use crate::program::{BinaryExtractor, Extractor, Version};
 
 use super::regex::parse_version;
 
-pub fn info(extractor: &BinaryExtractor) -> Result<Vec<Version>, Box<dyn Error>> {
-    if !extractor.path.exists() {
-        return Ok(Vec::default());
-    }
+impl Extractor for BinaryExtractor {
+    async fn version(&self) -> Result<Vec<Version>, Box<dyn Error>> {
+        if !self.path.exists() {
+            return Ok(Vec::default());
+        }
 
-    let r = if extractor.user.is_some() {
-        run_as_other_user_sudo(extractor)
-    } else {
-        run_as_user(extractor)
-    };
+        let r = if self.user.is_some() {
+            self.run_as_other_user_sudo()
+        } else {
+            self.run_as_user()
+        };
 
-    info!("Command executed");
+        info!("Command executed");
 
-    match r {
-        Ok(output) => {
-            let fd = if output.stdout.is_empty() {
-                &output.stderr
-            } else {
-                &output.stdout
-            };
+        match r {
+            Ok(output) => {
+                let fd = if output.stdout.is_empty() {
+                    &output.stderr
+                } else {
+                    &output.stdout
+                };
 
-            let s = str::from_utf8(fd);
+                let s = str::from_utf8(fd);
 
-            if !output.status.success() {
-                return Err(Box::new(IoError::new(
-                    std::io::ErrorKind::Other,
-                    s.unwrap(),
-                )));
-            }
+                if !output.status.success() {
+                    return Err(Box::new(IoError::new(
+                        std::io::ErrorKind::Other,
+                        s.unwrap(),
+                    )));
+                }
 
-            let r = parse_version(s.unwrap(), &extractor.regex);
+                let r = parse_version(s.unwrap(), &self.regex);
 
-            match r {
-                Ok(version) => Ok(vec![version]),
-                Err(e) => {
-                    error!("{e}");
-                    Err(e)
+                match r {
+                    Ok(version) => Ok(vec![version]),
+                    Err(e) => {
+                        error!("{e}");
+                        Err(e)
+                    }
                 }
             }
+            Err(e) => {
+                error!("{e}");
+                Err(Box::new(e))
+            }
         }
-        Err(e) => {
-            error!("{e}");
-            Err(Box::new(e))
+    }
+
+    fn extractor_name() -> &'static str {
+        "Binary"
+    }
+}
+
+impl BinaryExtractor {
+    fn run_as_user(&self) -> std::io::Result<Output> {
+        Command::new(self.path.clone())
+            .args(self.arguments.clone())
+            .output()
+    }
+
+    #[allow(dead_code)]
+    fn run_as_other_user_systemd(&self) -> std::io::Result<Output> {
+        let user = self.user.clone().unwrap();
+
+        let mut args: Vec<String> = vec![
+            "--pty".to_string(),
+            //"--wait".to_string(),
+            //"--collect".to_string(),
+            //"--service-type=exec".to_string(),
+            "--quiet".to_string(),
+            format!("--uid={user}",),
+            self.path.to_str().unwrap().to_string(),
+        ];
+
+        for a in self.arguments.clone() {
+            args.push(a);
         }
-    }
-}
 
-pub fn run_as_user(extractor: &BinaryExtractor) -> std::io::Result<Output> {
-    Command::new(extractor.path.clone())
-        .args(extractor.arguments.clone())
-        .output()
-}
+        info!("Running /usr/bin/systemd-run {args:?}",);
 
-pub fn run_as_other_user_systemd(extractor: &BinaryExtractor) -> std::io::Result<Output> {
-    let user = extractor.user.clone().unwrap();
-
-    let mut args: Vec<String> = vec![
-        "--pty".to_string(),
-        //"--wait".to_string(),
-        //"--collect".to_string(),
-        //"--service-type=exec".to_string(),
-        "--quiet".to_string(),
-        format!("--uid={user}",),
-        extractor.path.to_str().unwrap().to_string(),
-    ];
-
-    for a in extractor.arguments.clone() {
-        args.push(a);
+        Command::new("/usr/bin/systemd-run").args(args).output()
     }
 
-    info!("Running /usr/bin/systemd-run {args:?}",);
+    fn run_as_other_user_sudo(&self) -> std::io::Result<Output> {
+        let user = self.user.clone().unwrap();
 
-    Command::new("/usr/bin/systemd-run").args(args).output()
-}
+        let mut args: Vec<String> = vec![
+            "-u".to_string(),
+            user,
+            self.path.to_str().unwrap().to_string(),
+        ];
 
-pub fn run_as_other_user_sudo(extractor: &BinaryExtractor) -> std::io::Result<Output> {
-    let user = extractor.user.clone().unwrap();
+        for a in self.arguments.clone() {
+            args.push(a);
+        }
 
-    let mut args: Vec<String> = vec![
-        "-u".to_string(),
-        user,
-        extractor.path.to_str().unwrap().to_string(),
-    ];
+        info!("Running /usr/bin/sudo {args:?}",);
 
-    for a in extractor.arguments.clone() {
-        args.push(a);
+        Command::new("/usr/bin/sudo").args(args).output()
     }
-
-    info!("Running /usr/bin/sudo {args:?}",);
-
-    Command::new("/usr/bin/sudo").args(args).output()
 }
 
 #[cfg(test)]
@@ -117,8 +126,8 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test() {
+    #[tokio::test]
+    async fn test() {
         let tmp_dir = TempDir::new().expect("Could not create tmpdir");
         let file_path = tmp_dir.path().join("testprogram");
         let mut tmp_file = File::create(file_path.clone()).expect("Could not create tmpfile");
@@ -139,7 +148,7 @@ mod tests {
                 .to_string(),
         };
 
-        let res = info(&extractor);
+        let res = extractor.version().await;
         if let Err(e) = res {
             panic!("{e}");
         }
