@@ -3,16 +3,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assetinfo::{
+    db::Database,
     program::{Extractor, Program, ProgramInfo, Version},
     providers::endoflife_date::{self, Eol, ReleaseCycle},
 };
 use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
-use db::Database;
 use log::info;
 use std::{env, error::Error, process::exit};
-
-mod db;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -71,9 +69,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 let _ = gather_program_info(program).await;
             }
         }
-        Commands::Update {} => {
-            unimplemented!("Update is not implemented for now")
-        }
+        Commands::Update {} => update_database(),
     }
 
     Ok(())
@@ -139,3 +135,5 @@ fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
         }
     }
 }
+
+fn update_database() {}

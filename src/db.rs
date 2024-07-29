@@ -2,9 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use std::{error::Error, fs::File, io::BufReader, path::PathBuf};
+use std::{error::Error, fs::File, path::PathBuf};
 
-use assetinfo::program::Program;
+use async_compression::tokio::bufread::ZstdDecoder;
+use tar::Archive;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+use crate::program::Program;
 
 pub struct Database {
     pub path: PathBuf,
@@ -35,7 +39,7 @@ impl Database {
             }
 
             let file = File::open(entry.path())?;
-            let reader = BufReader::new(file);
+            let reader = std::io::BufReader::new(file);
             supported_programs.push(serde_json::from_reader(reader)?);
         }
 
@@ -56,12 +60,94 @@ impl Database {
 
         None
     }
+
+    pub fn check_update() {}
+
+    pub async fn download_update(
+        download_location: &str,
+        download_dir: PathBuf,
+    ) -> Result<PathBuf, Box<dyn Error>> {
+        let r = reqwest::get(download_location).await?;
+
+        let filehash = r
+            .url()
+            .path_segments()
+            .and_then(|segments| segments.last())
+            .and_then(|name| if name.is_empty() { None } else { Some(name) })
+            .unwrap();
+
+        println!("file to download: '{}'", filehash);
+        let filename = download_dir.join(filehash);
+        println!("will be located under: '{:?}'", filename);
+
+        let mut dest = File::create(filename.clone())?;
+        let bytes = r.bytes().await.unwrap();
+        let raw_bytes = bytes.to_vec();
+
+        let mut c = std::io::Cursor::new(bytes);
+
+        let hash = sha256::digest(raw_bytes);
+        assert_eq!(
+            hash.as_str(),
+            PathBuf::from(filename.file_stem().unwrap())
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+        );
+
+        std::io::copy(&mut c, &mut dest)?;
+
+        Ok(filename)
+    }
+
+    pub async fn install_update(
+        update_file: PathBuf,
+        update_dir: PathBuf,
+    ) -> Result<(), Box<dyn Error>> {
+        let decompressed_file = update_dir.join(update_file.file_stem().unwrap());
+
+        println!("{update_file:?}, {decompressed_file:?}");
+
+        Self::decompress_update(update_file, decompressed_file.clone()).await?;
+
+        Self::extract_update(decompressed_file, update_dir).await?;
+
+        Ok(())
+    }
+
+    async fn decompress_update(
+        compressed_file: PathBuf,
+        decompressed_file: PathBuf,
+    ) -> Result<(), Box<dyn Error>> {
+        let input = tokio::fs::File::open(compressed_file).await.unwrap();
+        let output = tokio::fs::File::create(decompressed_file).await.unwrap();
+
+        let mut reader = ZstdDecoder::new(tokio::io::BufReader::new(input));
+        let mut x: Vec<u8> = vec![];
+        reader.read_to_end(&mut x).await?;
+
+        let mut output = tokio::io::BufWriter::new(output);
+        output.write_all(x.len().to_string().as_bytes()).await?;
+
+        Ok(())
+    }
+
+    async fn extract_update(
+        update_file: PathBuf,
+        update_dir: PathBuf,
+    ) -> Result<(), Box<dyn Error>> {
+        let mut ar = Archive::new(File::open(update_file).unwrap());
+        ar.unpack(update_dir).unwrap();
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use assetinfo::program::ProgramInfo;
+    use crate::program::ProgramInfo;
     use std::fs::{self, File};
     use std::io::Write;
     use tempfile::TempDir;
@@ -98,5 +184,17 @@ mod tests {
         assert_eq!(db.get(&testprogram.info.id), Some(testprogram));
 
         fs::remove_file(file_path).expect("Could not delete tmpfile");
+    }
+
+    #[tokio::test]
+    #[ignore = "Needs network access (see integration tests)"]
+    async fn download() {
+        let tmp_dir = TempDir::new().expect("Could not create tmpdir");
+
+        let update_file = Database::download_update("https://db.assetinfo.de/d45ab56217ea96762255f6f8840c4625ed5a025760169038f5aa2454c109cd26.tar.zstd", tmp_dir.path().to_path_buf()).await.expect("Download failed");
+
+        Database::install_update(update_file, tmp_dir.path().to_path_buf())
+            .await
+            .expect("Installation failed");
     }
 }
