@@ -4,7 +4,7 @@
 
 [package]
 name = "assetinfo"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Benedikt Bastin"]
 edition = "2021"
 description = "assetinfo is a tool to watch for versions of assets and their end-of-life date."
@@ -13,16 +13,16 @@ repository = "https://github.com/bbastin/assetinfo"
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-bollard = "0.16.1"
+bollard = "0.17.0"
 chrono = { version = "0.4.38", features = ["now", "serde"] }
 clap = { version = "4.5.11", features = ["derive"] }
 log = "0.4.22"
 regex = "1.10.5"
 reqwest = { version = "0.12.5", features = ["blocking", "json"] }
 serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
+serde_json = "1.0.121"
 simple_logger = "5.0.0"
-tokio = { version = "1.39.1", features = ["full"] }
+tokio = { version = "1.39.2", features = ["full"] }
 
 [dev-dependencies]
 tempfile = "3.10.1"
