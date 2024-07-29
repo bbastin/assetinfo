@@ -4,11 +4,11 @@ SPDX-FileCopyrightText: 2024 Benedikt Bastin
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# eolmon
+# assetinfo
 
 ## About
 
-eolmon is a tool to watch for versions of products and their end-of-life date.
+assetinfo is a tool to watch for versions of assets and their end-of-life date.
 
 ## Installation
 

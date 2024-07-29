@@ -4,7 +4,7 @@
 
 use std::{error::Error, fs::File, io::BufReader, path::PathBuf};
 
-use eolmon::program::Program;
+use assetinfo::program::Program;
 
 pub struct Database {
     pub path: PathBuf,
@@ -61,7 +61,7 @@ impl Database {
 #[cfg(test)]
 mod tests {
 
-    use eolmon::program::ProgramInfo;
+    use assetinfo::program::ProgramInfo;
     use std::fs::{self, File};
     use std::io::Write;
     use tempfile::TempDir;

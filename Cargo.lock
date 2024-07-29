@@ -91,6 +91,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "assetinfo"
+version = "0.6.0"
+dependencies = [
+ "bollard",
+ "chrono",
+ "clap",
+ "log",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "simple_logger",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -307,23 +324,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b45de904aa0b010bce2ab45264d0631681847fa7b6f2eaa7dab7619943bc4f59"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "eolmon"
-version = "0.5.0"
-dependencies = [
- "bollard",
- "chrono",
- "clap",
- "log",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "simple_logger",
- "tempfile",
- "tokio",
 ]
 
 [[package]]

@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use chrono::{TimeDelta, Utc};
-use clap::{Parser, Subcommand};
-use db::Database;
-use eolmon::{
+use assetinfo::{
     program::{Extractor, Program, ProgramInfo, Version},
     providers::endoflife_date::{self, Eol, ReleaseCycle},
 };
+use chrono::{TimeDelta, Utc};
+use clap::{Parser, Subcommand};
+use db::Database;
 use log::info;
 use std::{env, error::Error, process::exit};
 
@@ -105,7 +105,7 @@ async fn print_info<T: Extractor>(e: T, p: &ProgramInfo) -> Result<(), Box<dyn E
         if let Some(ref endoflife_date_id) = p.endoflife_date_id {
             if let Ok(cycle_info) = endoflife_date::get_release_cycle(
                 endoflife_date_id,
-                eolmon::providers::endoflife_date::CycleId::String(v.cycle.clone()),
+                assetinfo::providers::endoflife_date::CycleId::String(v.cycle.clone()),
             )
             .await
             {

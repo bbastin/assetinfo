@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [package]
-name = "eolmon"
-version = "0.5.0"
+name = "assetinfo"
+version = "0.6.0"
+authors = ["Benedikt Bastin"]
 edition = "2021"
+description = "assetinfo is a tool to watch for versions of assets and their end-of-life date."
+readme = true
+repository = "https://github.com/bbastin/assetinfo"
+license = "AGPL-3.0-or-later"
 
 [dependencies]
 bollard = "0.16.1"
