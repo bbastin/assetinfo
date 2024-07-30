@@ -3,16 +3,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assetinfo::{
+    db::Database,
     program::{Extractor, Program, ProgramInfo, Version},
     providers::endoflife_date::{self, Eol, ReleaseCycle},
 };
 use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
-use db::Database;
-use log::info;
-use std::{env, error::Error, process::exit};
+use config::Config;
+use log::error;
+use std::{error::Error, fs, process::exit};
 
-mod db;
+mod config;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -43,20 +44,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Args::parse();
 
-    let db_path = env::current_dir()?.join("db");
-
-    let db = Database::load(db_path)?;
-
-    info!("Loaded database {}", db.path.display());
+    let config = Config::load("assetinfo-config.json".into())?;
 
     match args.command {
         Commands::List {} => {
+            let db = Database::load(config.database_folder())?;
+
             println!("Supported programs:");
             for program in db.supported_programs {
                 println!("{} ({}): ", program.info.title, program.info.id);
             }
         }
         Commands::Info { name } => {
+            let db = Database::load(config.database_folder())?;
+
             let p = db.get(name.as_str());
 
             if p.is_none() {
@@ -67,12 +68,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let _ = gather_program_info(p.unwrap()).await;
         }
         Commands::InfoAll {} => {
+            let db = Database::load(config.database_folder())?;
+
             for program in db.supported_programs {
                 let _ = gather_program_info(program).await;
             }
         }
         Commands::Update {} => {
-            unimplemented!("Update is not implemented for now")
+            update_database(&config).await?;
         }
     }
 
@@ -82,12 +85,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn gather_program_info(p: Program) -> Result<(), Box<dyn Error>> {
     if let Some(binary_extractors) = p.binary {
         for extractor in binary_extractors {
-            print_info(extractor, &p.info).await?
+            print_info(extractor, &p.info).await?;
         }
     }
 
     if let Some(extractor) = p.docker {
-        print_info(extractor, &p.info).await?
+        print_info(extractor, &p.info).await?;
     }
 
     Ok(())
@@ -138,4 +141,25 @@ fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
             );
         }
     }
+}
+
+async fn update_database(config: &Config) -> Result<(), Box<dyn Error>> {
+    let database_folder = config.database_folder();
+    if !database_folder.exists() {
+        fs::create_dir(database_folder)?;
+    }
+
+    if !config.database_folder().is_dir() {
+        error!(
+            "Database folder path is not a folder: {}",
+            database_folder
+                .to_str()
+                .unwrap_or("<error displaying folder>")
+        );
+        return Err(Box::new(std::io::Error::from(std::io::ErrorKind::NotFound)));
+    }
+
+    let new_db = Database::download_update(config.update_url(), database_folder).await?;
+
+    Database::install_update(&new_db, database_folder).await
 }
