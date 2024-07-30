@@ -11,7 +11,7 @@ use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
 use config::Config;
 use log::error;
-use std::{error::Error, fs, process::exit};
+use std::{error::Error, fs, path::PathBuf, process::exit};
 
 mod config;
 
@@ -20,6 +20,10 @@ mod config;
 struct Args {
     #[command(subcommand)]
     command: Commands,
+
+    /// Specify path to config file
+    #[arg(long, default_value = "./assetinfo-config.json")]
+    config_file: PathBuf,
 }
 
 #[derive(Subcommand, Debug)]
@@ -28,10 +32,9 @@ enum Commands {
     List {},
 
     /// Get information for a program
-    Info {
-        name: String,
-    },
+    Info { name: String },
 
+    /// Get information for all supported programs
     InfoAll {},
 
     /// Update internal database of supported programs
@@ -44,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let args = Args::parse();
 
-    let config = Config::load("assetinfo-config.json".into())?;
+    let config = Config::load(args.config_file)?;
 
     match args.command {
         Commands::List {} => {
