@@ -43,11 +43,11 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    simple_logger::init_with_level(log::Level::Warn).unwrap();
-
     let args = Args::parse();
 
     let config = Config::load(args.config_file)?;
+
+    simple_logger::init_with_level(config.log_level().unwrap_or(log::Level::Warn)).unwrap();
 
     match args.command {
         Commands::List {} => {

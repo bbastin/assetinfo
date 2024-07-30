@@ -12,9 +12,19 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
+enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Config {
     database_folder: PathBuf,
     update_url: String,
+    log_level: Option<LogLevel>,
 }
 
 impl Config {
@@ -30,5 +40,16 @@ impl Config {
 
     pub fn update_url(&self) -> &str {
         &self.update_url
+    }
+
+    pub fn log_level(&self) -> Option<log::Level> {
+        match self.log_level {
+            Some(LogLevel::Error) => Some(log::Level::Error),
+            Some(LogLevel::Warn) => Some(log::Level::Warn),
+            Some(LogLevel::Info) => Some(log::Level::Info),
+            Some(LogLevel::Debug) => Some(log::Level::Debug),
+            Some(LogLevel::Trace) => Some(log::Level::Trace),
+            None => None,
+        }
     }
 }
