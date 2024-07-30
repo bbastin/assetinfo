@@ -9,9 +9,9 @@ use tempfile::TempDir;
 async fn download_from_production() {
     let tmp_dir = TempDir::new().expect("Could not create tmpdir");
 
-    let update_file = Database::download_update("https://db.assetinfo.de/d45ab56217ea96762255f6f8840c4625ed5a025760169038f5aa2454c109cd26.tar.zstd", tmp_dir.path().to_path_buf()).await.expect("Download failed");
+    let update_file = Database::download_update("https://db.assetinfo.de/d45ab56217ea96762255f6f8840c4625ed5a025760169038f5aa2454c109cd26.tar.zstd", tmp_dir.path()).await.expect("Download failed");
 
-    Database::install_update(update_file, tmp_dir.path().to_path_buf())
+    Database::install_update(&update_file, tmp_dir.path())
         .await
         .expect("Installation failed");
 }
