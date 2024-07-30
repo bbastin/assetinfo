@@ -4,7 +4,7 @@
 
 [package]
 name = "assetinfo"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Benedikt Bastin"]
 edition = "2021"
 description = "assetinfo is a tool to watch for versions of assets and their end-of-life date."
