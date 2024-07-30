@@ -21,7 +21,7 @@ But I greatly appreciate feedback and hope this might change in the future.
 
 ## Authors and Acknowledgment
 
-This README is inspired by [makeareadme.com](makeareadme).
+This README is inspired by [makeareadme.com][makeareadme].
 
 ## License
 
