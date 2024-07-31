@@ -1,0 +1,17 @@
+{
+    "info": {
+        "id": "net.php",
+        "title": "PHP: Hypertext Preprocessor",
+        "endoflife_date_id": "php"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/php",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^PHP (?<version>(?<cycle>(?<major>\\d+).(?<minor>\\d+)).(?<patch>\\d+)(?:-(?<extra>\\S+))?)"
+        }
+    ],
+    "example": "PHP 8.1.2-1ubuntu2.18 (cli) (built: Jun 14 2024 15:52:55) (NTS)\nCopyright (c) The PHP Group\nZend Engine v4.1.2, Copyright (c) Zend Technologies\n    with Zend OPcache v8.1.2-1ubuntu2.18, Copyright (c), by Zend Technologies"
+}

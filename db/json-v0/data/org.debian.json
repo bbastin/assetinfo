@@ -1,0 +1,16 @@
+{
+    "info": {
+    "id": "org.debian",
+    "title": "Debian",
+    "endoflife_date_id": "debian"
+    },
+    "binary": [{
+        "path":
+            "/usr/bin/lsb_release"
+        ,
+        "arguments": [
+            "--release"
+        ],
+        "regex": "(?m)^Release:\\s+(?<version>(?<cycle>(?<major>\\d+)))"
+    }]
+}

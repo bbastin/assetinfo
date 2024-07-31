@@ -1,0 +1,19 @@
+{
+    "info": {
+        "id": "com.docker",
+        "title": "Docker Engine",
+        "endoflife_date_id": "docker-engine"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/docker",
+            "arguments": [
+                "version",
+                "--format",
+                "{{.Server.Version}}"
+            ],
+            "regex": "^(?<version>(?<cycle>(?<major>\\d+).(?<minor>\\d+)).(?<patch>\\d+))"
+        }
+    ],
+    "example": "24.0.7"
+}

@@ -1,0 +1,17 @@
+{
+    "info": {
+        "id": "org.apache.httpd",
+        "title": "Apache HTTP Server",
+        "endoflife_date_id": "apache"
+    },
+    "binary": [
+        {
+            "path": "/usr/sbin/apachectl",
+            "arguments": [
+                "-v"
+            ],
+            "regex": "(?m)^Server version: Apache/(?<version>(?<cycle>(?<major>\\d+).(?<minor>\\d+)).(?<patch>\\d+))"
+        }
+    ],
+    "example": "Server version: Apache/2.4.61 (Debian)\nServer built: 2024-07-07T12: 08: 26"
+}

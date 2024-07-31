@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2024 Benedikt Bastin
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version = 1
+
+[[annotations]]
+path = ["json-v0/**/*.json"]
+SPDX-FileCopyrightText = "2024 Benedikt Bastin"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

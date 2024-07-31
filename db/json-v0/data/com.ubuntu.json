@@ -1,0 +1,16 @@
+{
+    "info": {
+        "id": "com.ubuntu",
+        "title": "Ubuntu",
+        "endoflife_date_id": "ubuntu"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/lsb_release",
+            "arguments": [
+                "--release"
+            ],
+            "regex": "(?m)^Release:\\s+(?<version>(?<cycle>(?<major>\\d+)\\.(?<minor>\\d+)))"
+        }
+    ]
+}

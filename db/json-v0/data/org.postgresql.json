@@ -1,0 +1,28 @@
+{
+    "info": {
+        "id": "org.postgresql",
+        "title": "PostgreSQL",
+        "endoflife_date_id": "postgresql"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/psql",
+            "user": "postgres",
+            "arguments": [
+                "-c",
+                "SELECT version();"
+            ],
+            "regex": "(?m)^\\s*PostgreSQL \\d+.\\d+ \\(\\w+ (?<version>(?<cycle>(?<major>\\d+))\\.(?<minor>\\d+)-(?<patch>\\d+)\\+(?<extra>[[:alnum:]]+)?)\\)"
+        }
+    ],
+    "docker": {
+        "image_name": "postgres",
+        "binary_path": "/usr/bin/psql",
+        "arguments": [
+            "-c",
+            "SELECT version();"
+        ],
+        "regex": "(?m)^\\s*PostgreSQL \\d+.\\d+ \\(\\w+ (?<version>(?<cycle>(?<major>\\d+))\\.(?<minor>\\d+)-(?<patch>\\d+)\\+(?<extra>[[:alnum:]]+)?)\\)"
+    },
+    "example": "                                                      version\n-------------------------------------------------------------------------------------------------------------------\n PostgreSQL 15.7 (Debian 15.7-0+deb12u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0,\n    64-bit\n(1 Zeile)"
+}

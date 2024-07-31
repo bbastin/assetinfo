@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2024 Benedikt Bastin
+#
+# SPDX-License-Identifier: CC0-1.0
+
+all: check build
+
+check:
+    @echo Validating json-v0
+    @check-jsonschema --schemafile json-v0/json-v0.schema.json json-v0/data/*.json
+# find json-v0/data -maxdepth 1 -name "*.json" -exec jsonschema json-v0/json-v0.schema.json -i {} \;
+
+export TZ := "UTC0"
+export LC_ALL := "C"
+last-commit-time := `TZ=UTC0 git log -1 --format=tformat:%cd --date=iso-strict-local`
+
+build:
+    @mkdir -p build
+    @echo Building build/latest.tar.zstd
+    @find json-v0/data -maxdepth 1 -name "*.json" -printf "%P\n"| \
+    tar \
+    --sort=name \
+    --format=posix \
+    --pax-option='exthdr.name=%d/PaxHeaders/%f' \
+    --pax-option='delete=atime,delete=ctime' \
+    --clamp-mtime --mtime={{last-commit-time}} \
+    --numeric-owner --owner=0 --group=0 --mode='go+u,go-w' \
+    -C json-v0/data -T - --zstd -cf build/latest.tar.zstd
+
+clean:
+    rm -R build

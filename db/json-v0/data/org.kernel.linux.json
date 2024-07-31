@@ -1,0 +1,16 @@
+{
+    "info": {
+        "id": "org.kernel.linux",
+        "title": "linux",
+        "endoflife_date_id": "linux"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/uname",
+            "arguments": [
+                "-r"
+            ],
+            "regex": "^(?<version>(?<cycle>(?<major>\\d\\d*)\\.(?<minor>\\d\\d*))\\.(?<patch>\\d\\d*)?(-(?<extra>.*))?)"
+        }
+    ]
+}

@@ -1,0 +1,23 @@
+{
+    "info": {
+        "id": "org.python",
+        "title": "python",
+        "endoflife_date_id": "python"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/python",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^Python (?<version>(?<cycle>(?<major>\\d\\d*)\\.(?<minor>\\d\\d*))\\.(?<patch>\\d\\d*))"
+        },
+        {
+            "path": "/usr/bin/python3",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^Python (?<version>(?<cycle>(?<major>\\d\\d*)\\.(?<minor>\\d\\d*))\\.(?<patch>\\d\\d*))"
+        }
+    ]
+}

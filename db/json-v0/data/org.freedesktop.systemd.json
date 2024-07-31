@@ -1,0 +1,22 @@
+{
+    "info": {
+        "id": "org.freedesktop.systemd",
+        "title": "systemd"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/systemctl",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^systemd \\d+ \\((?<version>(?<cycle>(?<major>\\d\\d*))\\.(?<minor>\\d\\d*).*)\\)"
+        },
+        {
+            "path": "/bin/systemctl",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^systemd \\d+ \\((?<version>(?<cycle>(?<major>\\d\\d*))\\.(?<minor>\\d\\d*).*)\\)"
+        }
+    ]
+}

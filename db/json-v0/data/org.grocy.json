@@ -1,0 +1,11 @@
+{
+    "info": {
+        "id": "org.grocy",
+        "title": "Grocy",
+        "endoflife_date_id": "grocy"
+    },
+    "docker": {
+        "image_name": "grocy/backend",
+        "regex": "^v(?<version>(?<cycle>(?<major>\\d+)\\.(?<minor>\\d+))\\.(?<patch>\\d+)(-(?<extra>\\d+))?)"
+    }
+}

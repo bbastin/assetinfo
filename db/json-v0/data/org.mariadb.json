@@ -1,0 +1,17 @@
+{
+    "info": {
+        "id": "org.mariadb",
+        "title": "MariaDB",
+        "endoflife_date_id": "mariadb"
+    },
+    "binary": [
+        {
+            "path": "/usr/sbin/mariadbd",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^(?:\\/\\w*)*mariadbd\\s+Ver\\s+(?<version>(?<cycle>(?<major>\\d+)\\.(?<minor>\\d+))\\.(?<patch>\\d+)(?:-(?<extra>[[:graph:]]+))?)"
+        }
+    ],
+    "example": "mariadbd  Ver 10.11.6-MariaDB-0+deb12u1 for debian-linux-gnu on x86_64 (Debian 12)"
+}

@@ -1,0 +1,24 @@
+{
+    "info": {
+        "id": "org.nginx",
+        "title": "nginx",
+        "endoflife_date_id": "nginx"
+    },
+    "binary": [
+        {
+            "path": "/usr/sbin/nginx",
+            "arguments": [
+                "-v"
+            ],
+            "regex": "^nginx version: nginx/(?<version>(?<cycle>(?<major>\\d+)\\.(?<minor>\\d+))\\.(?<patch>\\d+)(?:\\s+\\((?<extra>.*)\\))?)"
+        }
+    ],
+    "docker": {
+        "image_name": "nginx",
+        "binary_path": "/usr/sbin/nginx",
+        "arguments": [
+            "-v"
+        ],
+        "regex": "^nginx version: nginx/(?<version>(?<cycle>(?<major>\\d+)\\.(?<minor>\\d+))\\.(?<patch>\\d+)(?:\\s+\\((?<extra>.*)\\))?)"
+    }
+}

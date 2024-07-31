@@ -1,0 +1,85 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "description": "",
+    "type": "object",
+    "properties": {
+        "info": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "title": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "endoflife_date_id": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "id",
+                "title"
+            ]
+        },
+        "binary": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+                "required": [
+                    "path",
+                    "regex"
+                ],
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "arguments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "regex": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                }
+            }
+        },
+        "docker": {
+            "type": "object",
+            "properties": {
+                "image_name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "binary_path": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "regex": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "image_name",
+                "regex"
+            ]
+        }
+    },
+    "required": [
+        "info"
+    ]
+}
