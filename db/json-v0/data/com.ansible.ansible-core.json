@@ -1,0 +1,17 @@
+{
+    "info": {
+        "id": "com.ansible.ansible-core",
+        "title": "Ansible Core",
+        "endoflife_date_id": "ansible-core"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/ansible",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^ansible \\[core (?<version>(?<cycle>(?<major>\\d+).(?<minor>\\d+)).(?<patch>\\d+))\\]"
+        }
+    ],
+    "example": "ansible [core 2.17.2]\n  config file = None\n  configured module search path = ['/home/benedikt/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']\n  ansible python module location = /usr/lib/python3.12/site-packages/ansible\n  ansible collection location = /home/benedikt/.ansible/collections:/usr/share/ansible/collections\n  executable location = /usr/bin/ansible\n  python version = 3.12.4 (main, Jun  7 2024,06: 33: 07) [GCC 14.1.1 20240522] (/usr/bin/python)\n  jinja version = 3.1.4\n  libyaml = True"
+}

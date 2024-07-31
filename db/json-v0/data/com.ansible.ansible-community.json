@@ -1,0 +1,17 @@
+{
+    "info": {
+        "id": "com.ansible.ansible-community",
+        "title": "Ansible Community",
+        "endoflife_date_id": "ansible"
+    },
+    "binary": [
+        {
+            "path": "/usr/bin/ansible-community",
+            "arguments": [
+                "--version"
+            ],
+            "regex": "^Ansible community version (?<version>(?<cycle>(?<major>\\d+)).(?<minor>\\d+).(?<patch>\\d+))"
+        }
+    ],
+    "example": "Ansible community version 10.2.0"
+}
