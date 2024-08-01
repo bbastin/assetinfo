@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2024-08-01
+
+### <!-- 1 -->Added
+
+- Add database files to repository
+- Add support for Ansible Core and Community
+- Add table views
+
 ## [0.8.0] - 2024-07-30
 
 ### <!-- 1 -->Added
@@ -12,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add CHANGELOG.md
 - Add config-file argument to specify path
 - Add log_level setting to config file
+- New release
 
 ### <!-- 5 -->Fixed
 
@@ -90,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial commit
 
+[0.9.0]: https://github.com/bbastin/assetinfo/compare/v0.8.0..v0.9.0
 [0.8.0]: https://github.com/bbastin/assetinfo/compare/v0.7.0..v0.8.0
 [0.7.0]: https://github.com/bbastin/assetinfo/compare/v0.6.2..v0.7.0
 [0.6.2]: https://github.com/bbastin/assetinfo/compare/v0.6.1..v0.6.2
