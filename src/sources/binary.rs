@@ -16,9 +16,9 @@ use crate::program::{BinaryExtractor, Extractor, Version};
 use super::regex::parse_version;
 
 impl Extractor for BinaryExtractor {
-    async fn version(&self) -> Result<Vec<Version>, Box<dyn Error>> {
+    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>> {
         if !self.path.exists() {
-            return Ok(Vec::default());
+            return Ok(None);
         }
 
         let r = if self.user.is_some() {
@@ -49,7 +49,7 @@ impl Extractor for BinaryExtractor {
                 let r = parse_version(s.unwrap(), &self.regex);
 
                 match r {
-                    Ok(version) => Ok(vec![version]),
+                    Ok(version) => Ok(Some(version)),
                     Err(e) => {
                         error!("{e}");
                         Err(e)
@@ -155,9 +155,9 @@ mod tests {
         assert!(res.is_ok());
 
         let version = res.unwrap();
-        assert_eq!(version.len(), 1);
+        assert!(version.is_some());
 
-        let version = &version[0];
+        let version = version.unwrap();
         assert_eq!(version.string, "1.2.3");
 
         fs::remove_file(file_path).expect("Could not delete tmpfile");

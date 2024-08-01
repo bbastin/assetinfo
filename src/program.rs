@@ -7,7 +7,7 @@ use std::{error::Error, path::PathBuf};
 
 pub trait Extractor {
     #[allow(async_fn_in_trait)]
-    async fn version(&self) -> Result<Vec<Version>, Box<dyn Error>>;
+    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>>;
 
     fn extractor_name() -> &'static str;
 }

@@ -14,6 +14,7 @@ use log::error;
 use std::{error::Error, fs, path::PathBuf, process::exit};
 
 mod config;
+mod table_view;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -53,10 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Commands::List {} => {
             let db = Database::load(config.database_folder())?;
 
-            println!("Supported programs:");
-            for program in db.supported_programs {
-                println!("{} ({}): ", program.info.title, program.info.id);
-            }
+            table_view::list_supported_programs(&db.supported_programs);
         }
         Commands::Info { name } => {
             let db = Database::load(config.database_folder())?;
@@ -73,9 +71,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Commands::InfoAll {} => {
             let db = Database::load(config.database_folder())?;
 
-            for program in db.supported_programs {
-                let _ = gather_program_info(program).await;
-            }
+            // for program in db.supported_programs {
+            //     let _ = gather_program_info(program).await;
+            // }
+            table_view::list_info_all(db.supported_programs).await?;
         }
         Commands::Update {} => {
             update_database(&config).await?;
@@ -100,7 +99,7 @@ async fn gather_program_info(p: Program) -> Result<(), Box<dyn Error>> {
 }
 
 async fn print_info<T: Extractor>(e: T, p: &ProgramInfo) -> Result<(), Box<dyn Error>> {
-    for v in e.version().await? {
+    if let Some(v) = e.version().await? {
         println!(
             "{} ({}) found in Version {}",
             p.title,

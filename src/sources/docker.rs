@@ -23,7 +23,10 @@ impl Connection {
         Ok(Connection::new(Docker::connect_with_socket_defaults()?))
     }
 
-    pub async fn info(&self, extractor: &DockerExtractor) -> Result<Vec<Version>, Box<dyn Error>> {
+    pub async fn info(
+        &self,
+        extractor: &DockerExtractor,
+    ) -> Result<Option<Version>, Box<dyn Error>> {
         let result = &self
             .connection
             .list_containers(Some(ListContainersOptions::<String> {
@@ -40,8 +43,6 @@ impl Connection {
             )));
         }
 
-        let mut versions: Vec<Version> = Vec::default();
-
         // Label matcher
 
         for res in result {
@@ -56,14 +57,14 @@ impl Connection {
             }
 
             if let Ok(Some(v)) = Self::match_oci_version_label(res, &extractor.regex) {
-                versions.push(v);
+                return Ok(Some(v));
             }
         }
 
         // Binary matcher
         // @TODO
 
-        Ok(versions)
+        Ok(None)
     }
 
     fn match_oci_version_label(
@@ -86,7 +87,7 @@ impl Connection {
 }
 
 impl Extractor for DockerExtractor {
-    async fn version(&self) -> Result<Vec<Version>, Box<dyn Error>> {
+    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>> {
         let connection = Connection::connect()?;
 
         connection.info(self).await
