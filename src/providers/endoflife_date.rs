@@ -16,13 +16,6 @@ pub enum CycleId {
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Clone)]
 #[serde(untagged)]
-pub enum Eol {
-    Date(NaiveDate),
-    String(String),
-}
-
-#[derive(Deserialize, PartialEq, Eq, Debug, Clone)]
-#[serde(untagged)]
 pub enum Lts {
     Bool(bool),
     String(String),
@@ -40,7 +33,7 @@ pub enum DateOrBool {
 pub struct ReleaseCycle {
     pub cycle: Option<CycleId>,
     pub release_date: NaiveDate,
-    pub eol: Eol,
+    pub eol: DateOrBool,
     pub latest: String,
     pub link: Option<String>,
     pub lts: Lts,
@@ -106,7 +99,7 @@ mod tests {
         );
         assert_eq!(
             rc.eol,
-            Eol::Date(NaiveDate::from_ymd_opt(2022, 01, 01).unwrap())
+            DateOrBool::Date(NaiveDate::from_ymd_opt(2022, 01, 01).unwrap())
         );
         assert_eq!(rc.latest, "21.04");
         assert_eq!(

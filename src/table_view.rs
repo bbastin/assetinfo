@@ -4,9 +4,8 @@
 
 use assetinfo::{
     program::{Extractor, Program, ProgramInfo, Version},
-    providers::endoflife_date::{self, CycleId, DateOrBool, Eol, ReleaseCycle},
+    providers::endoflife_date::{self, CycleId, DateOrBool, ReleaseCycle},
 };
-use chrono::Utc;
 use std::error::Error;
 use tabled::{
     settings::{object::Rows, themes::Colorization, Color, Panel, Style},
@@ -56,6 +55,8 @@ struct ProgramDisplayVersion {
     version: String,
     #[tabled(rename = "Release Cycle")]
     cycle: String,
+    #[tabled(rename = "Supported")]
+    supported: String,
     #[tabled(rename = "Updates until")]
     updates_until: String,
     #[tabled(rename = "Security Updates until")]
@@ -68,48 +69,64 @@ fn version_row(
     r: &Option<ReleaseCycle>,
     source: &str,
 ) -> ProgramDisplayVersion {
-    let today = Utc::now().date_naive();
+    let today = chrono::Utc::now().date_naive();
 
-    let security_until = match r {
+    match r {
         Some(r) => {
-            if let Eol::Date(eol_date) = r.eol {
-                let remaining_time = eol_date - today;
+            let (security_until, supported) = match &r.eol {
+                DateOrBool::Date(eol_date) => {
+                    let remaining_time = *eol_date - today;
+                    let supported = if remaining_time.num_days() > 0 {
+                        "Yes".to_string()
+                    } else {
+                        "No".to_string()
+                    };
 
-                format!("{} ({} days)", eol_date, remaining_time.num_days(),)
-            } else {
-                "Unknown".to_string()
+                    (
+                        format!("{} ({} days)", eol_date, remaining_time.num_days(),),
+                        supported,
+                    )
+                }
+                DateOrBool::Bool(eol) => {
+                    if *eol {
+                        ("No".to_string(), "No".to_string())
+                    } else {
+                        ("Unknown".to_string(), "Yes".to_string())
+                    }
+                }
+            };
+            let updates_until = match r.support {
+                Some(DateOrBool::Date(date)) => {
+                    let remaining_time = date - today;
+                    format!("{} ({} days)", date, remaining_time.num_days(),)
+                }
+                Some(DateOrBool::Bool(supported)) => {
+                    format!("{supported}")
+                }
+                None => security_until.clone(),
+            };
+
+            let cycle = format!("{} ({})", v.cycle, r.latest);
+
+            ProgramDisplayVersion {
+                title: p.title.clone(),
+                source: source.to_string(),
+                version: v.string.clone(),
+                cycle,
+                supported,
+                updates_until,
+                security_until,
             }
         }
-        None => "Unknown".to_string(),
-    };
-
-    let updates_until = match r {
-        Some(r) => match r.support {
-            Some(DateOrBool::Date(date)) => {
-                let remaining_time = date - today;
-                format!("{} ({} days)", date, remaining_time.num_days(),)
-            }
-            Some(DateOrBool::Bool(supported)) => {
-                format!("{supported}")
-            }
-            None => security_until.clone(),
+        None => ProgramDisplayVersion {
+            title: p.title.clone(),
+            source: source.to_string(),
+            version: v.string.clone(),
+            cycle: v.cycle.clone(),
+            supported: "Unknown".to_string(),
+            updates_until: "Unknown".to_string(),
+            security_until: "Unknown".to_string(),
         },
-        None => security_until.clone(),
-    };
-
-    let cycle = if let Some(r) = r {
-        format!("{} ({})", v.cycle, r.latest)
-    } else {
-        v.cycle.clone()
-    };
-
-    ProgramDisplayVersion {
-        title: p.title.clone(),
-        source: source.to_string(),
-        version: v.string.clone(),
-        cycle,
-        updates_until,
-        security_until,
     }
 }
 
@@ -137,32 +154,39 @@ async fn get_release_cycle(p: &ProgramInfo, v: &Version) -> Option<ReleaseCycle>
 
 fn get_display_release_cycle(release_cycle: &Option<ReleaseCycle>) -> SupportState {
     if let Some(release_cycle) = release_cycle {
-        let today = Utc::now().date_naive();
+        let today = chrono::Utc::now().date_naive();
 
-        if let Eol::Date(eol) = release_cycle.eol {
-            if eol < today {
-                SupportState::Unsupported
-            } else {
-                match release_cycle.support {
-                    Some(DateOrBool::Date(supported_until)) => {
-                        if supported_until < today {
-                            SupportState::Security
-                        } else {
-                            SupportState::Supported
+        match release_cycle.eol {
+            DateOrBool::Date(eol) => {
+                if eol < today {
+                    SupportState::Unsupported
+                } else {
+                    match release_cycle.support {
+                        Some(DateOrBool::Date(supported_until)) => {
+                            if supported_until < today {
+                                SupportState::Security
+                            } else {
+                                SupportState::Supported
+                            }
                         }
-                    }
-                    Some(DateOrBool::Bool(is_supported)) => {
-                        if is_supported {
-                            SupportState::Supported
-                        } else {
-                            SupportState::Security
+                        Some(DateOrBool::Bool(is_supported)) => {
+                            if is_supported {
+                                SupportState::Supported
+                            } else {
+                                SupportState::Security
+                            }
                         }
+                        None => SupportState::Supported,
                     }
-                    None => SupportState::Supported,
                 }
             }
-        } else {
-            SupportState::Supported
+            DateOrBool::Bool(eol) => {
+                if eol {
+                    SupportState::Unsupported
+                } else {
+                    SupportState::Supported
+                }
+            }
         }
     } else {
         SupportState::Unknown

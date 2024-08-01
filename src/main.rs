@@ -5,7 +5,7 @@
 use assetinfo::{
     db::Database,
     program::{Extractor, Program, ProgramInfo, Version},
-    providers::endoflife_date::{self, Eol, ReleaseCycle},
+    providers::endoflife_date::{self, DateOrBool, ReleaseCycle},
 };
 use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
@@ -122,7 +122,7 @@ async fn print_info<T: Extractor>(e: T, p: &ProgramInfo) -> Result<(), Box<dyn E
 }
 
 fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
-    if let Eol::Date(eol_date) = cycle_info.eol {
+    if let DateOrBool::Date(eol_date) = cycle_info.eol {
         let today = Utc::now().date_naive();
 
         let remaining_time = eol_date - today;
