@@ -59,14 +59,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Commands::Info { name } => {
             let db = Database::load(config.database_folder())?;
 
-            let p = db.get(name.as_str());
+            let program = db.get(name.as_str());
 
-            if p.is_none() {
+            if program.is_none() {
                 println!("Could not find any program matching {name}");
                 exit(-1);
             }
 
-            let _ = gather_program_info(p.unwrap()).await;
+            let _ = gather_program_info(program.unwrap()).await;
         }
         Commands::InfoAll {} => {
             let db = Database::load(config.database_folder())?;
@@ -84,44 +84,47 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn gather_program_info(p: Program) -> Result<(), Box<dyn Error>> {
-    if let Some(binary_extractors) = p.binary {
+async fn gather_program_info(program: Program) -> Result<(), Box<dyn Error>> {
+    if let Some(binary_extractors) = program.binary {
         for extractor in binary_extractors {
-            print_info(extractor, &p.info).await?;
+            print_info(extractor, &program.info).await?;
         }
     }
 
-    if let Some(extractor) = p.docker {
-        print_info(extractor, &p.info).await?;
+    if let Some(extractor) = program.docker {
+        print_info(extractor, &program.info).await?;
     }
 
     Ok(())
 }
 
-async fn print_info<T: Extractor>(e: T, p: &ProgramInfo) -> Result<(), Box<dyn Error>> {
-    if let Some(v) = e.version().await? {
+async fn print_info<T: Extractor>(
+    extractor: T,
+    program_info: &ProgramInfo,
+) -> Result<(), Box<dyn Error>> {
+    if let Some(version) = extractor.version().await? {
         println!(
             "{} ({}) found in Version {}",
-            p.title,
+            program_info.title,
             T::extractor_name(),
-            v.string
+            version.string
         );
 
-        if let Some(ref endoflife_date_id) = p.endoflife_date_id {
+        if let Some(ref endoflife_date_id) = program_info.endoflife_date_id {
             if let Ok(cycle_info) = endoflife_date::get_release_cycle(
                 endoflife_date_id,
-                assetinfo::providers::endoflife_date::CycleId::String(v.cycle.clone()),
+                endoflife_date::CycleId::String(version.cycle.clone()),
             )
             .await
             {
-                print_end_of_life_info(&v, &cycle_info);
+                print_end_of_life_info(&version, &cycle_info);
             }
         }
     }
     Ok(())
 }
 
-fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
+fn print_end_of_life_info(version: &Version, cycle_info: &ReleaseCycle) {
     if let DateOrBool::Date(eol_date) = cycle_info.eol {
         let today = Utc::now().date_naive();
 
@@ -130,14 +133,14 @@ fn print_end_of_life_info(v: &Version, cycle_info: &ReleaseCycle) {
         if remaining_time > TimeDelta::days(0) {
             println!(
                 "Version {} will be supported for {} days ({})",
-                v.cycle,
+                version.cycle,
                 remaining_time.num_days(),
                 eol_date
             );
         } else {
             println!(
                 "Version {} is not supported since {} days ({})",
-                v.cycle,
+                version.cycle,
                 remaining_time.num_days().abs(),
                 eol_date
             );

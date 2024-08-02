@@ -6,7 +6,7 @@ use bollard::{container::ListContainersOptions, secret::ContainerSummary, Docker
 use std::error::Error;
 
 use crate::{
-    program::{self, DockerExtractor, Extractor, Version},
+    program::{DockerExtractor, Extractor, Version},
     sources::regex,
 };
 
@@ -56,8 +56,8 @@ impl Connection {
                 continue;
             }
 
-            if let Ok(Some(v)) = Self::match_oci_version_label(res, &extractor.regex) {
-                return Ok(Some(v));
+            if let Ok(Some(version)) = Self::match_oci_version_label(res, &extractor.regex) {
+                return Ok(Some(version));
             }
         }
 
@@ -70,7 +70,7 @@ impl Connection {
     fn match_oci_version_label(
         container_summary: &ContainerSummary,
         regex: &str,
-    ) -> Result<Option<program::Version>, Box<dyn Error>> {
+    ) -> Result<Option<Version>, Box<dyn Error>> {
         if let Some(labels) = container_summary.labels.clone() {
             const VERSION_LABEL: &str = "org.opencontainers.image.version";
 

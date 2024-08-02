@@ -21,7 +21,7 @@ impl Extractor for BinaryExtractor {
             return Ok(None);
         }
 
-        let r = if self.user.is_some() {
+        let program_output = if self.user.is_some() {
             self.run_as_other_user_sudo()
         } else {
             self.run_as_user()
@@ -29,7 +29,7 @@ impl Extractor for BinaryExtractor {
 
         info!("Command executed");
 
-        match r {
+        match program_output {
             Ok(output) => {
                 let fd = if output.stdout.is_empty() {
                     &output.stderr
@@ -37,28 +37,28 @@ impl Extractor for BinaryExtractor {
                     &output.stdout
                 };
 
-                let s = str::from_utf8(fd);
+                let string = str::from_utf8(fd);
 
                 if !output.status.success() {
                     return Err(Box::new(IoError::new(
                         std::io::ErrorKind::Other,
-                        s.unwrap(),
+                        string.unwrap(),
                     )));
                 }
 
-                let r = parse_version(s.unwrap(), &self.regex);
+                let version = parse_version(string.unwrap(), &self.regex);
 
-                match r {
+                match version {
                     Ok(version) => Ok(Some(version)),
-                    Err(e) => {
-                        error!("{e}");
-                        Err(e)
+                    Err(error) => {
+                        error!("{error}");
+                        Err(error)
                     }
                 }
             }
-            Err(e) => {
-                error!("{e}");
-                Err(Box::new(e))
+            Err(error) => {
+                error!("{error}");
+                Err(Box::new(error))
             }
         }
     }
@@ -89,8 +89,8 @@ impl BinaryExtractor {
             self.path.to_str().unwrap().to_string(),
         ];
 
-        for a in self.arguments.clone() {
-            args.push(a);
+        for argument in self.arguments.clone() {
+            args.push(argument);
         }
 
         info!("Running /usr/bin/systemd-run {args:?}",);
@@ -107,8 +107,8 @@ impl BinaryExtractor {
             self.path.to_str().unwrap().to_string(),
         ];
 
-        for a in self.arguments.clone() {
-            args.push(a);
+        for argument in self.arguments.clone() {
+            args.push(argument);
         }
 
         info!("Running /usr/bin/sudo {args:?}",);
@@ -149,8 +149,8 @@ mod tests {
         };
 
         let res = extractor.version().await;
-        if let Err(e) = res {
-            panic!("{e}");
+        if let Err(error) = res {
+            panic!("{error}");
         }
         assert!(res.is_ok());
 

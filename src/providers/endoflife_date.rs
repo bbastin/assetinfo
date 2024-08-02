@@ -21,7 +21,7 @@ pub enum Lts {
     String(String),
 }
 
-#[derive(Deserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(Deserialize, PartialEq, Eq, Debug, Clone, Copy)]
 #[serde(untagged)]
 pub enum DateOrBool {
     Date(NaiveDate),
@@ -44,8 +44,8 @@ pub struct ReleaseCycle {
 const BASE_URL: &str = "https://endoflife.date/api";
 
 pub async fn get_release_cycles(product: &str) -> Result<Vec<ReleaseCycle>, Box<dyn Error>> {
-    let r = reqwest::get(format!("{BASE_URL}/{product}.json")).await?;
-    Ok(r.json::<Vec<ReleaseCycle>>().await?)
+    let response = reqwest::get(format!("{BASE_URL}/{product}.json")).await?;
+    Ok(response.json::<Vec<ReleaseCycle>>().await?)
 }
 
 pub async fn get_release_cycle(
@@ -53,17 +53,17 @@ pub async fn get_release_cycle(
     cycle: CycleId,
 ) -> Result<ReleaseCycle, Box<dyn Error>> {
     let cycle_text = match cycle {
-        CycleId::String(s) => s,
-        CycleId::Number(n) => n.to_string(),
+        CycleId::String(string) => string,
+        CycleId::Number(number) => number.to_string(),
     };
 
-    let r = reqwest::get(format!("{BASE_URL}/{product}/{cycle_text}.json")).await?;
-    Ok(r.json::<ReleaseCycle>().await?)
+    let response = reqwest::get(format!("{BASE_URL}/{product}/{cycle_text}.json")).await?;
+    Ok(response.json::<ReleaseCycle>().await?)
 }
 
 pub async fn get_all_products() -> Result<Vec<String>, Box<dyn Error>> {
-    let r = reqwest::get(format!("{BASE_URL}/all.json")).await?;
-    Ok(r.json::<Vec<String>>().await?)
+    let response = reqwest::get(format!("{BASE_URL}/all.json")).await?;
+    Ok(response.json::<Vec<String>>().await?)
 }
 
 #[cfg(test)]
@@ -89,17 +89,17 @@ mod tests {
         assert_eq!(rc.lts, Lts::Bool(false));
         assert_eq!(
             rc.release_date,
-            NaiveDate::from_ymd_opt(2021, 04, 22).unwrap()
+            NaiveDate::from_ymd_opt(2021, 4, 22).unwrap()
         );
         assert_eq!(
             rc.support,
             Some(DateOrBool::Date(
-                NaiveDate::from_ymd_opt(2022, 01, 01).unwrap()
+                NaiveDate::from_ymd_opt(2022, 1, 1).unwrap()
             ))
         );
         assert_eq!(
             rc.eol,
-            DateOrBool::Date(NaiveDate::from_ymd_opt(2022, 01, 01).unwrap())
+            DateOrBool::Date(NaiveDate::from_ymd_opt(2022, 1, 1).unwrap())
         );
         assert_eq!(rc.latest, "21.04");
         assert_eq!(
@@ -114,7 +114,7 @@ mod tests {
         let rcs = get_release_cycles("linux")
             .await
             .expect("Did not receive valid response");
-        assert!(rcs.len() > 0);
+        assert!(!rcs.is_empty());
     }
 
     #[tokio::test]
@@ -127,7 +127,7 @@ mod tests {
 
         assert_eq!(
             rcs.release_date,
-            NaiveDate::from_ymd_opt(2024, 07, 14).unwrap()
+            NaiveDate::from_ymd_opt(2024, 7, 14).unwrap()
         );
     }
 
@@ -138,6 +138,6 @@ mod tests {
             .await
             .expect("Did not receive valid response");
 
-        assert!(products.len() > 0);
+        assert!(!products.is_empty());
     }
 }

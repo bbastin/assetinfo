@@ -27,15 +27,18 @@ pub(crate) fn list_supported_programs(programs: &[Program]) {
 
     let mut data = programs
         .iter()
-        .map(|p| ProgramDisplayInfo {
-            title: p.info.title.clone(),
-            id: p.info.id.clone(),
-            binary: p.binary.as_ref().is_some_and(|b| !b.is_empty()),
-            docker: p.docker.is_some(),
+        .map(|program| ProgramDisplayInfo {
+            title: program.info.title.clone(),
+            id: program.info.id.clone(),
+            binary: program
+                .binary
+                .as_ref()
+                .is_some_and(|binary_extractors| !binary_extractors.is_empty()),
+            docker: program.docker.is_some(),
         })
         .collect::<Vec<_>>();
 
-    data.sort_by(|a, b| a.title.partial_cmp(&b.title).unwrap());
+    data.sort_by(|lhs, rhs| lhs.title.partial_cmp(&rhs.title).unwrap());
 
     let mut table = Table::new(data);
     table
@@ -64,16 +67,16 @@ struct ProgramDisplayVersion {
 }
 
 fn version_row(
-    p: &ProgramInfo,
-    v: &Version,
-    r: &Option<ReleaseCycle>,
+    program_info: &ProgramInfo,
+    version: &Version,
+    release_cycle: &Option<ReleaseCycle>,
     source: &str,
 ) -> ProgramDisplayVersion {
     let today = chrono::Utc::now().date_naive();
 
-    match r {
-        Some(r) => {
-            let (security_until, supported) = match &r.eol {
+    match release_cycle {
+        Some(release_cycle) => {
+            let (security_until, supported) = match &release_cycle.eol {
                 DateOrBool::Date(eol_date) => {
                     let remaining_time = *eol_date - today;
                     let supported = if remaining_time.num_days() > 0 {
@@ -95,23 +98,23 @@ fn version_row(
                     }
                 }
             };
-            let updates_until = match r.support {
+            let updates_until = match release_cycle.support {
                 Some(DateOrBool::Date(date)) => {
                     let remaining_time = date - today;
                     format!("{} ({} days)", date, remaining_time.num_days(),)
                 }
-                Some(DateOrBool::Bool(supported)) => {
-                    format!("{supported}")
+                Some(DateOrBool::Bool(gets_updates)) => {
+                    format!("{gets_updates}")
                 }
                 None => security_until.clone(),
             };
 
-            let cycle = format!("{} ({})", v.cycle, r.latest);
+            let cycle = format!("{} ({})", version.cycle, release_cycle.latest);
 
             ProgramDisplayVersion {
-                title: p.title.clone(),
+                title: program_info.title.clone(),
                 source: source.to_string(),
-                version: v.string.clone(),
+                version: version.string.clone(),
                 cycle,
                 supported,
                 updates_until,
@@ -119,10 +122,10 @@ fn version_row(
             }
         }
         None => ProgramDisplayVersion {
-            title: p.title.clone(),
+            title: program_info.title.clone(),
             source: source.to_string(),
-            version: v.string.clone(),
-            cycle: v.cycle.clone(),
+            version: version.string.clone(),
+            cycle: version.cycle.clone(),
             supported: "Unknown".to_string(),
             updates_until: "Unknown".to_string(),
             security_until: "Unknown".to_string(),
@@ -140,12 +143,14 @@ enum SupportState {
     Unknown,
 }
 
-async fn get_release_cycle(p: &ProgramInfo, v: &Version) -> Option<ReleaseCycle> {
-    match p.endoflife_date_id {
+async fn get_release_cycle(program_info: &ProgramInfo, version: &Version) -> Option<ReleaseCycle> {
+    match program_info.endoflife_date_id {
         Some(ref id) => {
-            match endoflife_date::get_release_cycle(id, CycleId::String(v.cycle.clone())).await {
-                Ok(e) => Some(e),
-                Err(_e) => None,
+            match endoflife_date::get_release_cycle(id, CycleId::String(version.cycle.clone()))
+                .await
+            {
+                Ok(release_cycle) => Some(release_cycle),
+                Err(_error) => None,
             }
         }
         None => None,
@@ -194,13 +199,13 @@ fn get_display_release_cycle(release_cycle: &Option<ReleaseCycle>) -> SupportSta
 }
 
 async fn run_extractor<T: Extractor>(
-    p: &ProgramInfo,
+    program_info: &ProgramInfo,
     extractor: &T,
 ) -> Option<(ProgramDisplayVersion, SupportState)> {
-    let v = extractor.version().await;
-    if let Ok(Some(v)) = v {
-        let release_cycle = get_release_cycle(p, &v).await;
-        let row = version_row(p, &v, &release_cycle, "Binary");
+    let version = extractor.version().await;
+    if let Ok(Some(version)) = version {
+        let release_cycle = get_release_cycle(program_info, &version).await;
+        let row = version_row(program_info, &version, &release_cycle, "Binary");
         return Some((row, get_display_release_cycle(&release_cycle)));
     }
     None
@@ -215,30 +220,30 @@ pub(crate) async fn list_info_all(programs: Vec<Program>) -> Result<(), Box<dyn 
     let warn = Color::FG_YELLOW;
     let unsupported = Color::BOLD | Color::FG_RED;
 
-    for p in programs {
+    for program in programs {
         // Binary
-        if let Some(binary_extractors) = p.binary {
+        if let Some(binary_extractors) = program.binary {
             for extractor in binary_extractors {
-                if let Some(row) = run_extractor(&p.info, &extractor).await {
+                if let Some(row) = run_extractor(&program.info, &extractor).await {
                     rows.push(row);
                 }
             }
         }
 
         // Docker
-        if let Some(extractor) = p.docker {
-            if let Some(row) = run_extractor(&p.info, &extractor).await {
+        if let Some(extractor) = program.docker {
+            if let Some(row) = run_extractor(&program.info, &extractor).await {
                 rows.push(row);
             }
         }
     }
 
-    let mut table = Table::new(rows.iter().map(|r| r.0.clone()));
+    let mut table = Table::new(rows.iter().map(|row| row.0.clone()));
     table
         .with(Style::psql())
         .with(Panel::header("Detected programs"));
 
-    let support_states: Vec<_> = rows.iter().map(|r| r.1).collect();
+    let support_states: Vec<_> = rows.iter().map(|row| row.1).collect();
 
     for (i, state) in support_states.iter().enumerate() {
         let color = match state {

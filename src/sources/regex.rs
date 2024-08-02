@@ -14,7 +14,7 @@ pub fn parse_version(input: &str, regex: &str) -> Result<Version, Box<dyn Error>
     let re = Regex::new(regex)?;
     let matcher = re.captures(input);
     if matcher.is_none() {
-        return Err(Box::new(std::io::Error::new(
+        return Err(Box::new(io::Error::new(
             io::ErrorKind::InvalidData,
             "Regex did not match",
         )));
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn nginx() {
         let input = "nginx version: nginx/1.18.0 (Ubuntu)";
-        let regex = r#"^nginx version: nginx/(?<version>(?<cycle>(?<major>\d+)\.(?<minor>\d+))\.(?<patch>\d+))"#;
+        let regex = r"^nginx version: nginx/(?<version>(?<cycle>(?<major>\d+)\.(?<minor>\d+))\.(?<patch>\d+))";
 
         let version = parse_version(input, regex).expect("Could not extract version");
 
@@ -77,8 +77,7 @@ Build Number: 9962179521
 Build Date: Wed Jul 17 13:56:52 UTC 2024
 Build Hash: 7bbf7ec130487af9a324040259b2e942d7b9ba3c
 Build Enterprise Ready: false";
-        let regex =
-            r#"^Version: (?<version>(?<cycle>(?<major>\d+)\.(?<minor>\d+))\.(?<patch>\d+))"#;
+        let regex = r"^Version: (?<version>(?<cycle>(?<major>\d+)\.(?<minor>\d+))\.(?<patch>\d+))";
 
         let version = parse_version(input, regex).expect("Could not extract version");
 

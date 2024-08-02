@@ -56,12 +56,12 @@ impl Database {
 
     #[must_use]
     pub fn get(&self, name: &str) -> Option<Program> {
-        for p in &self.supported_programs {
-            if p.info.id != name && p.info.title.to_lowercase() != name.to_lowercase() {
+        for program in &self.supported_programs {
+            if program.info.id != name && program.info.title.to_lowercase() != name.to_lowercase() {
                 continue;
             }
 
-            return Some(p.clone());
+            return Some(program.clone());
         }
 
         None
@@ -75,12 +75,12 @@ impl Database {
     ) -> Result<PathBuf, Box<dyn Error>> {
         info!("Downloading new database '{download_location}'");
 
-        let r = reqwest::get(download_location).await?;
+        let response = reqwest::get(download_location).await?;
 
-        let filename = r
+        let filename = response
             .url()
             .path_segments()
-            .and_then(std::iter::Iterator::last)
+            .and_then(Iterator::last)
             .and_then(|name| if name.is_empty() { None } else { Some(name) })
             .unwrap();
 
@@ -88,13 +88,13 @@ impl Database {
         info!("Saving new database at '{}'", filename.to_str().unwrap());
 
         let mut dest = File::create(filename.clone())?;
-        let bytes = r.bytes().await.unwrap();
+        let bytes = response.bytes().await.unwrap();
 
         info!("File size: {}", bytes.len());
 
         // let raw_bytes = bytes.to_vec();
 
-        let mut c = std::io::Cursor::new(bytes);
+        let mut cursor = std::io::Cursor::new(bytes);
 
         // let hash = sha256::digest(raw_bytes);
         // assert_eq!(
@@ -106,7 +106,7 @@ impl Database {
         //         .unwrap()
         // );
 
-        std::io::copy(&mut c, &mut dest)?;
+        std::io::copy(&mut cursor, &mut dest)?;
 
         Ok(filename)
     }
