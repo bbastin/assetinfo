@@ -4,7 +4,7 @@
 
 use assetinfo::{
     program::{Extractor, Program, ProgramInfo, Version},
-    providers::endoflife_date::{self, CycleId, DateOrBool, ReleaseCycle},
+    providers::endoflife_date::{CycleId, DateOrBool, EndOfLifeDateClient, ReleaseCycle},
 };
 use std::error::Error;
 use tabled::{
@@ -143,10 +143,15 @@ enum SupportState {
     Unknown,
 }
 
-async fn get_release_cycle(program_info: &ProgramInfo, version: &Version) -> Option<ReleaseCycle> {
+async fn get_release_cycle(
+    program_info: &ProgramInfo,
+    version: &Version,
+    client: &EndOfLifeDateClient,
+) -> Option<ReleaseCycle> {
     match program_info.endoflife_date_id {
         Some(ref id) => {
-            match endoflife_date::get_release_cycle(id, CycleId::String(version.cycle.clone()))
+            match client
+                .get_release_cycle(id, CycleId::String(version.cycle.clone()))
                 .await
             {
                 Ok(release_cycle) => Some(release_cycle),
@@ -202,9 +207,12 @@ async fn run_extractor<T: Extractor>(
     program_info: &ProgramInfo,
     extractor: &T,
 ) -> Option<(ProgramDisplayVersion, SupportState)> {
+    const BASE_URL: &str = "https://endoflife.date/api";
+    let client = EndOfLifeDateClient::new(BASE_URL);
+
     let version = extractor.version().await;
     if let Ok(Some(version)) = version {
-        let release_cycle = get_release_cycle(program_info, &version).await;
+        let release_cycle = get_release_cycle(program_info, &version, &client).await;
         let row = version_row(program_info, &version, &release_cycle, "Binary");
         return Some((row, get_display_release_cycle(&release_cycle)));
     }

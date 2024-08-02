@@ -5,6 +5,7 @@
 use std::error::Error;
 
 use chrono::NaiveDate;
+use log::info;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Debug, Clone)]
@@ -41,33 +42,63 @@ pub struct ReleaseCycle {
     pub discontinued: Option<DateOrBool>,
 }
 
-const BASE_URL: &str = "https://endoflife.date/api";
-
-pub async fn get_release_cycles(product: &str) -> Result<Vec<ReleaseCycle>, Box<dyn Error>> {
-    let response = reqwest::get(format!("{BASE_URL}/{product}.json")).await?;
-    Ok(response.json::<Vec<ReleaseCycle>>().await?)
+pub struct EndOfLifeDateClient {
+    base_url: String,
 }
 
-pub async fn get_release_cycle(
-    product: &str,
-    cycle: CycleId,
-) -> Result<ReleaseCycle, Box<dyn Error>> {
-    let cycle_text = match cycle {
-        CycleId::String(string) => string,
-        CycleId::Number(number) => number.to_string(),
-    };
+impl EndOfLifeDateClient {
+    #[must_use]
+    pub fn new(base_url: &str) -> Self {
+        EndOfLifeDateClient {
+            base_url: base_url.to_owned(),
+        }
+    }
 
-    let response = reqwest::get(format!("{BASE_URL}/{product}/{cycle_text}.json")).await?;
-    Ok(response.json::<ReleaseCycle>().await?)
-}
+    pub async fn get_release_cycles(
+        &self,
+        product: &str,
+    ) -> Result<Vec<ReleaseCycle>, Box<dyn Error>> {
+        let url = format!("{}/{product}.json", self.base_url);
+        info!("Retrieving ReleaseCycles for {product} from {url}");
 
-pub async fn get_all_products() -> Result<Vec<String>, Box<dyn Error>> {
-    let response = reqwest::get(format!("{BASE_URL}/all.json")).await?;
-    Ok(response.json::<Vec<String>>().await?)
+        let response = reqwest::get(url).await?;
+        info!("Recieved response {}", response.status());
+
+        Ok(response.json::<Vec<ReleaseCycle>>().await?)
+    }
+
+    pub async fn get_release_cycle(
+        &self,
+        product: &str,
+        cycle: CycleId,
+    ) -> Result<ReleaseCycle, Box<dyn Error>> {
+        let cycle_text = match cycle {
+            CycleId::String(string) => string,
+            CycleId::Number(number) => number.to_string(),
+        };
+        let url = format!("{}/{product}/{cycle_text}.json", self.base_url);
+        info!("Retrieving ReleaseCycle {cycle_text} for {product} from {url}");
+
+        let response = reqwest::get(url).await?;
+        info!("Recieved response {}", response.status());
+
+        Ok(response.json::<ReleaseCycle>().await?)
+    }
+
+    pub async fn get_all_products(&self) -> Result<Vec<String>, Box<dyn Error>> {
+        let url = format!("{}/all.json", self.base_url);
+        info!("Retrieving supported products from {url}");
+
+        let response = reqwest::get(url).await?;
+        info!("Recieved response {}", response.status());
+
+        Ok(response.json::<Vec<String>>().await?)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use test_log::test;
 
     use super::*;
 
@@ -108,20 +139,68 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    #[ignore]
+    #[test(tokio::test)]
     async fn api_get_release_cycles_from_linux() {
-        let rcs = get_release_cycles("linux")
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        // Create a mock
+        let mock = server
+            .mock("GET", "/linux.json")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"[
+{
+    "cycle": "6.10",
+    "releaseDate": "2024-07-14",
+    "eol": "2024-11-14",
+    "latest": "6.10.2",
+    "latestReleaseDate": "2024-07-27",
+    "lts": false
+}]"#,
+            )
+            .create_async()
+            .await;
+
+        let client = EndOfLifeDateClient::new(&url);
+
+        let rcs = client
+            .get_release_cycles("linux")
             .await
             .expect("Did not receive valid response");
         assert!(!rcs.is_empty());
+
+        mock.assert_async().await;
     }
 
-    #[tokio::test]
-    #[ignore]
+    #[test(tokio::test)]
     async fn api_get_one_release_cycle_from_linux() {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        // Create a mock
+        let mock = server
+            .mock("GET", "/linux/6.10.json")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{
+    "releaseDate": "2024-07-14",
+    "eol": "2024-11-14",
+    "latest": "6.10.2",
+    "latestReleaseDate": "2024-07-27",
+    "lts": false
+}"#,
+            )
+            .create_async()
+            .await;
+
+        let client = EndOfLifeDateClient::new(&url);
+
         let cycle = CycleId::String("6.10".to_string());
-        let rcs = get_release_cycle("linux", cycle.clone())
+        let rcs = client
+            .get_release_cycle("linux", cycle.clone())
             .await
             .expect("Did not receive valid response");
 
@@ -129,15 +208,33 @@ mod tests {
             rcs.release_date,
             NaiveDate::from_ymd_opt(2024, 7, 14).unwrap()
         );
+
+        mock.assert_async().await;
     }
 
-    #[tokio::test]
-    #[ignore]
+    #[test(tokio::test)]
     async fn api_get_supported_product_list() {
-        let products = get_all_products()
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        // Create a mock
+        let mock = server
+            .mock("GET", "/all.json")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"["linux"]"#)
+            .create_async()
+            .await;
+
+        let client = EndOfLifeDateClient::new(&url);
+
+        let products = client
+            .get_all_products()
             .await
             .expect("Did not receive valid response");
 
         assert!(!products.is_empty());
+
+        mock.assert_async().await;
     }
 }

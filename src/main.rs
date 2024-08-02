@@ -5,7 +5,7 @@
 use assetinfo::{
     db::Database,
     program::{Extractor, Program, ProgramInfo, Version},
-    providers::endoflife_date::{self, DateOrBool, ReleaseCycle},
+    providers::endoflife_date::{self, DateOrBool, EndOfLifeDateClient, ReleaseCycle},
 };
 use chrono::{TimeDelta, Utc};
 use clap::{Parser, Subcommand};
@@ -111,11 +111,14 @@ async fn print_info<T: Extractor>(
         );
 
         if let Some(ref endoflife_date_id) = program_info.endoflife_date_id {
-            if let Ok(cycle_info) = endoflife_date::get_release_cycle(
-                endoflife_date_id,
-                endoflife_date::CycleId::String(version.cycle.clone()),
-            )
-            .await
+            const BASE_URL: &str = "https://endoflife.date/api";
+            let client = EndOfLifeDateClient::new(BASE_URL);
+            if let Ok(cycle_info) = client
+                .get_release_cycle(
+                    endoflife_date_id,
+                    endoflife_date::CycleId::String(version.cycle.clone()),
+                )
+                .await
             {
                 print_end_of_life_info(&version, &cycle_info);
             }
