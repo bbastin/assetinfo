@@ -6,14 +6,24 @@ use core::str;
 use std::{
     error::Error,
     io::Error as IoError,
+    path::PathBuf,
     process::{Command, Output},
 };
 
 use log::{error, info};
+use serde::{Deserialize, Serialize};
 
-use crate::program::{BinaryExtractor, Extractor, Version};
+use crate::program::Version;
 
-use super::regex::parse_version;
+use super::{regex::parse_version, Extractor};
+
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
+pub struct BinaryExtractor {
+    pub path: PathBuf,
+    pub user: Option<String>,
+    pub arguments: Vec<String>,
+    pub regex: String,
+}
 
 impl Extractor for BinaryExtractor {
     async fn version(&self) -> Result<Option<Version>, Box<dyn Error>> {

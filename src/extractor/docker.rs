@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use bollard::{container::ListContainersOptions, secret::ContainerSummary, Docker};
-use std::error::Error;
+use serde::{Deserialize, Serialize};
+use std::{error::Error, path::PathBuf};
 
-use crate::{
-    program::{DockerExtractor, Extractor, Version},
-    sources::regex,
-};
+use crate::{extractor::regex, program::Version};
+
+use super::Extractor;
 
 pub struct Connection {
     connection: Docker,
@@ -84,6 +84,14 @@ impl Connection {
         }
         Ok(None)
     }
+}
+
+#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
+pub struct DockerExtractor {
+    pub image_name: String,
+    pub binary_path: Option<PathBuf>,
+    pub arguments: Option<Vec<String>>,
+    pub regex: String,
 }
 
 impl Extractor for DockerExtractor {

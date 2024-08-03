@@ -4,7 +4,8 @@
 
 use assetinfo::{
     db::Database,
-    program::{Extractor, Program, ProgramInfo, Version},
+    extractor::Extractor,
+    program::{Program, ProgramInfo, Version},
     providers::endoflife_date::{self, DateOrBool, EndOfLifeDateClient, ReleaseCycle},
 };
 use chrono::{TimeDelta, Utc};

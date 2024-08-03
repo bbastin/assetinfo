@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assetinfo::{
-    program::{Extractor, Program, ProgramInfo, Version},
+    extractor::Extractor,
+    program::{Program, ProgramInfo, Version},
     providers::endoflife_date::{CycleId, DateOrBool, EndOfLifeDateClient, ReleaseCycle},
 };
 use std::error::Error;

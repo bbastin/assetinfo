@@ -2,31 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::extractor::{binary::BinaryExtractor, docker::DockerExtractor};
 use serde::{Deserialize, Serialize};
-use std::{error::Error, path::PathBuf};
-
-pub trait Extractor {
-    #[allow(async_fn_in_trait)]
-    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>>;
-
-    fn extractor_name() -> &'static str;
-}
-
-#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
-pub struct BinaryExtractor {
-    pub path: PathBuf,
-    pub user: Option<String>,
-    pub arguments: Vec<String>,
-    pub regex: String,
-}
-
-#[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
-pub struct DockerExtractor {
-    pub image_name: String,
-    pub binary_path: Option<PathBuf>,
-    pub arguments: Option<Vec<String>>,
-    pub regex: String,
-}
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct ProgramInfo {
