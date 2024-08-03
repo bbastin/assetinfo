@@ -8,7 +8,7 @@ use std::{error::Error, path::PathBuf};
 
 use crate::{extractor::regex, program::Version};
 
-use super::Extractor;
+use super::{Extractor, ExtractorError};
 
 pub struct Connection {
     connection: Docker,
@@ -19,14 +19,14 @@ impl Connection {
         Connection { connection }
     }
 
-    pub fn connect() -> Result<Connection, Box<dyn Error>> {
+    pub fn connect() -> Result<Connection, bollard::errors::Error> {
         Ok(Connection::new(Docker::connect_with_socket_defaults()?))
     }
 
     pub async fn info(
         &self,
         extractor: &DockerExtractor,
-    ) -> Result<Option<Version>, Box<dyn Error>> {
+    ) -> Result<Option<Version>, ExtractorError> {
         let result = &self
             .connection
             .list_containers(Some(ListContainersOptions::<String> {
@@ -36,15 +36,7 @@ impl Connection {
             }))
             .await?;
 
-        if result.is_empty() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                "Did not find matching docker container",
-            )));
-        }
-
         // Label matcher
-
         for res in result {
             if res.image.is_none()
                 || !res
@@ -95,7 +87,7 @@ pub struct DockerExtractor {
 }
 
 impl Extractor for DockerExtractor {
-    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>> {
+    async fn version(&self) -> Result<Option<Version>, ExtractorError> {
         let connection = Connection::connect()?;
 
         connection.info(self).await

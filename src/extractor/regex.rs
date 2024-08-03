@@ -4,20 +4,20 @@
 
 use log::info;
 use regex::Regex;
-use std::{error::Error, io};
 
 use crate::program::Version;
 
-pub fn parse_version(input: &str, regex: &str) -> Result<Version, Box<dyn Error>> {
+use super::ExtractorError;
+
+pub fn parse_version(input: &str, regex: &str) -> Result<Version, ExtractorError> {
     info!(r#"Applying "{regex}" to "{input}""#);
 
     let re = Regex::new(regex)?;
     let matcher = re.captures(input);
     if matcher.is_none() {
-        return Err(Box::new(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "Regex did not match",
-        )));
+        return Err(ExtractorError::VersionError(
+            "Regex did not match".to_owned(),
+        ));
     }
     let caps = matcher.unwrap();
 

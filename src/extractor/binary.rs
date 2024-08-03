@@ -4,18 +4,16 @@
 
 use core::str;
 use std::{
-    error::Error,
-    io::Error as IoError,
     path::PathBuf,
     process::{Command, Output},
 };
 
-use log::{error, info};
+use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::program::Version;
 
-use super::{regex::parse_version, Extractor};
+use super::{regex::parse_version, Extractor, ExtractorError};
 
 #[derive(Deserialize, Serialize, Clone, PartialEq, Eq, Debug)]
 pub struct BinaryExtractor {
@@ -26,51 +24,35 @@ pub struct BinaryExtractor {
 }
 
 impl Extractor for BinaryExtractor {
-    async fn version(&self) -> Result<Option<Version>, Box<dyn Error>> {
+    async fn version(&self) -> Result<Option<Version>, ExtractorError> {
         if !self.path.exists() {
             return Ok(None);
         }
 
-        let program_output = if self.user.is_some() {
-            self.run_as_other_user_sudo()
+        let output = if self.user.is_some() {
+            self.run_as_other_user_sudo()?
         } else {
-            self.run_as_user()
+            self.run_as_user()?
         };
 
         info!("Command executed");
 
-        match program_output {
-            Ok(output) => {
-                let fd = if output.stdout.is_empty() {
-                    &output.stderr
-                } else {
-                    &output.stdout
-                };
+        let fd = if output.stdout.is_empty() {
+            &output.stderr
+        } else {
+            &output.stdout
+        };
 
-                let string = str::from_utf8(fd);
+        let string = str::from_utf8(fd);
 
-                if !output.status.success() {
-                    return Err(Box::new(IoError::new(
-                        std::io::ErrorKind::Other,
-                        string.unwrap(),
-                    )));
-                }
-
-                let version = parse_version(string.unwrap(), &self.regex);
-
-                match version {
-                    Ok(version) => Ok(Some(version)),
-                    Err(error) => {
-                        error!("{error}");
-                        Err(error)
-                    }
-                }
-            }
-            Err(error) => {
-                error!("{error}");
-                Err(Box::new(error))
-            }
+        if !output.status.success() {
+            return Err(ExtractorError::IoError(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                string.unwrap(),
+            )));
         }
+
+        Ok(Some(parse_version(string.unwrap(), &self.regex)?))
     }
 
     fn extractor_name() -> &'static str {

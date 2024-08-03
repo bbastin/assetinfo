@@ -120,6 +120,7 @@ dependencies = [
  "tar",
  "tempfile",
  "test-log",
+ "thiserror",
  "tokio",
  "tokio-stream",
 ]
