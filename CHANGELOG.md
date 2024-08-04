@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2024-08-04
+
+### <!-- 1 -->Added
+
+- Add mocks for endoflife.date API
+- Add tests for Version comparison
+- Add custom error for Extractors using thiserror
+- Changed config format from JSON to TOML
+- Add basic usage documentation to README
+
+### <!-- 2 -->Changed
+
+- Rename Sources to Extractor module
+
+## [0.10.1] - 2024-08-02
+
+### <!-- 2 -->Changed
+
+- Enable more lints and fix them
+
 ## [0.10.0] - 2024-08-01
 
 ### <!-- 1 -->Added
@@ -109,6 +129,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial commit
 
+[0.11.0]: https://github.com/bbastin/assetinfo/compare/v0.10.1..v0.11.0
+[0.10.1]: https://github.com/bbastin/assetinfo/compare/v0.10.0..v0.10.1
 [0.10.0]: https://github.com/bbastin/assetinfo/compare/v0.9.0..v0.10.0
 [0.9.0]: https://github.com/bbastin/assetinfo/compare/v0.8.0..v0.9.0
 [0.8.0]: https://github.com/bbastin/assetinfo/compare/v0.7.0..v0.8.0

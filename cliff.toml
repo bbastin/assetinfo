@@ -73,6 +73,7 @@ commit_parsers = [
   { message = "[Ss]ecurity", group = "<!-- 0 -->Security" },
 
   { message = "^docs: Update changelog", skip = true },
+  { message = "^chore: Release", skip = true },
 
   { message = "^build:", group = "<!-- 2 -->Changed" },
   { message = "^chore:", group = "<!-- 2 -->Changed" },
