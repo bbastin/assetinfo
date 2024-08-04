@@ -24,7 +24,7 @@ struct Args {
     command: Commands,
 
     /// Specify path to config file
-    #[arg(long, default_value = "./assetinfo-config.json")]
+    #[arg(long, default_value = "./assetinfo-config.toml")]
     config_file: PathBuf,
 }
 

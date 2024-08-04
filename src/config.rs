@@ -5,7 +5,7 @@
 use std::{
     error::Error,
     fs::File,
-    io::BufReader,
+    io::{BufReader, Read},
     path::{Path, PathBuf},
 };
 
@@ -21,25 +21,36 @@ enum LogLevel {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct Config {
-    database_folder: PathBuf,
+pub struct DatabaseConfig {
+    path: PathBuf,
     update_url: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Config {
     log_level: Option<LogLevel>,
+    database: DatabaseConfig,
 }
 
 impl Config {
     pub fn load(config_file_path: PathBuf) -> Result<Config, Box<dyn Error>> {
-        let file = File::open(config_file_path)?;
-        let reader = BufReader::new(file);
-        Ok(serde_json::from_reader(reader)?)
+        let file_content = {
+            let file = File::open(config_file_path)?;
+            let mut reader = BufReader::new(file);
+            let mut buf = String::default();
+            let _size = reader.read_to_string(&mut buf)?;
+            buf
+        };
+
+        Ok(toml::from_str(&file_content)?)
     }
 
     pub fn database_folder(&self) -> &Path {
-        &self.database_folder
+        &self.database.path
     }
 
     pub fn update_url(&self) -> &str {
-        &self.update_url
+        &self.database.update_url
     }
 
     pub fn log_level(&self) -> Option<log::Level> {
