@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2024-08-06
+
+### <!-- 1 -->Added
+
+- Add cargo deny to check dependencies
+- Add thirdparty licenses with cargo-bundle-licenses
+- Add info on dependencies and licenses
+
+### <!-- 2 -->Changed
+
+- Update dependencies
+
+### <!-- 4 -->Removed
+
+- Remove unnecessary dependency feature
+
 ## [0.11.0] - 2024-08-04
 
 ### <!-- 1 -->Added
@@ -129,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial commit
 
+[0.12.0]: https://github.com/bbastin/assetinfo/compare/v0.11.0..v0.12.0
 [0.11.0]: https://github.com/bbastin/assetinfo/compare/v0.10.1..v0.11.0
 [0.10.1]: https://github.com/bbastin/assetinfo/compare/v0.10.0..v0.10.1
 [0.10.0]: https://github.com/bbastin/assetinfo/compare/v0.9.0..v0.10.0
