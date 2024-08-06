@@ -4,5 +4,7 @@
 
 pub mod db;
 pub mod extractor;
+pub mod hash_database;
 pub mod program;
 pub mod providers;
+pub mod scan;

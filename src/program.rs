@@ -19,7 +19,7 @@ pub struct Program {
     pub docker: Option<DockerExtractor>,
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Version {
     pub string: String,
     pub cycle: String,
