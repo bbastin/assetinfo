@@ -14,6 +14,7 @@ use config::Config;
 use log::error;
 use std::{error::Error, fs, path::PathBuf, process::exit};
 
+mod about;
 mod config;
 mod table_view;
 
@@ -41,6 +42,12 @@ enum Commands {
 
     /// Update internal database of supported programs
     Update {},
+
+    /// Display information about the program
+    About {
+        #[arg(long, default_value = "false")]
+        thirdparty: bool,
+    },
 }
 
 #[tokio::main]
@@ -79,6 +86,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Commands::Update {} => {
             update_database(&config).await?;
+        }
+        Commands::About { thirdparty } => {
+            about::about(thirdparty).await;
         }
     }
 

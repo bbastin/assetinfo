@@ -14,6 +14,7 @@ repository = "https://github.com/bbastin/assetinfo"
 license = "AGPL-3.0-or-later"
 keywords = ["cli", "security"]
 categories = ["command-line-utilities"]
+build = "build.rs"
 exclude = [".github", "cliff.toml", ]
 
 [dependencies]
@@ -39,6 +40,9 @@ toml = "0.8.19"
 mockito = "1.5.0"
 tempfile = "3.11.0"
 test-log = "0.2.16"
+
+[build-dependencies]
+zstd = "0.13.2"
 
 [lints.rust]
 missing_copy_implementations = "warn"

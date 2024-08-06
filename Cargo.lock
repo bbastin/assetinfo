@@ -124,6 +124,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "toml",
+ "zstd",
 ]
 
 [[package]]
